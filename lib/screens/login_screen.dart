@@ -8,16 +8,14 @@ import '../services/remember_credentials.dart';
 import '../services/user_profile_repository.dart';
 import '../utils/form_validators.dart';
 import '../widgets/app_text_field.dart';
-import '../widgets/auth_form_frame.dart';
+import '../widgets/auth_widgets.dart';
 import '../widgets/loading_overlay.dart';
 import '../widgets/primary_action_button.dart';
-import '../widgets/auth_form_footer_branding.dart';
 import '../widgets/responsive_layout.dart';
-import '../widgets/rounded_back_button.dart';
-import 'admin_home_screen.dart';
-import 'forgot_password_screen.dart';
-import 'register_screen.dart';
-import 'user_home_screen.dart';
+import '../services/admin_services.dart';
+import './forgot_password_screen.dart';
+import './register_screen.dart';
+import './user_home_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -34,6 +32,7 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _obscure = true;
   bool _loading = false;
   final _profileRepo = UserProfileRepository();
+  final _adminAuth = AdminAuthService();
 
   @override
   void initState() {
@@ -76,6 +75,23 @@ class _LoginScreenState extends State<LoginScreen> {
       );
       final signedIn = FirebaseAuth.instance.currentUser;
       if (signedIn != null) {
+        final blocked = await _profileRepo.isBlocked(signedIn.uid);
+        if (blocked) {
+          await FirebaseAuth.instance.signOut();
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                AppI18n.t(
+                  context,
+                  en: 'Your account has been blocked',
+                  ar: 'تم حظر حسابك',
+                ),
+              ),
+            ),
+          );
+          return;
+        }
         await _profileRepo.touchLastLogin(signedIn.uid);
       }
       await RememberCredentials.saveAfterLogin(
@@ -83,44 +99,8 @@ class _LoginScreenState extends State<LoginScreen> {
         gmailUsername: email,
         password: _password.text,
       );
-      final user = FirebaseAuth.instance.currentUser;
-      if (user != null && !user.emailVerified) {
-        await user.sendEmailVerification();
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            behavior: SnackBarBehavior.floating,
-            content: Text(
-              AppI18n.t(
-                context,
-                en: 'Signed in. Please verify your email — we sent a new link to your inbox.',
-                ar: 'تم تسجيل الدخول. يُرجى التحقق من بريدك — أرسلنا رابطًا جديدًا.',
-              ),
-            ),
-            backgroundColor: Theme.of(context).colorScheme.primary,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
-        );
-      } else {
-        if (!mounted) return;
-        final role = user == null
-            ? null
-            : await _profileRepo.getUserRole(user.uid);
-        final normalized = (role ?? 'user').toLowerCase();
-        final target = normalized == 'admin'
-            ? const AdminHomeScreen()
-            : const UserHomeScreen();
-        if (!mounted) return;
-        Navigator.of(context).pushAndRemoveUntil(
-          AppTransitions.fadeSlide(
-            target,
-            routeName: normalized == 'admin' ? '/admin-home' : '/user-home',
-          ),
-          (route) => false,
-        );
-      }
+      if (!mounted) return;
+      await _openHomeForSignedInUser();
     } on FirebaseAuthException catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(
@@ -129,6 +109,32 @@ class _LoginScreenState extends State<LoginScreen> {
     } finally {
       if (mounted) setState(() => _loading = false);
     }
+  }
+
+  // Looks at the database role, then opens Admin Home or User Home.
+  Future<void> _openHomeForSignedInUser() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+    final role = await _adminAuth.getRole(user.uid);
+    if (!mounted) return;
+    if (_adminAuth.isAdmin(role)) {
+      _openAdminHome();
+    } else {
+      _openUserHome();
+    }
+  }
+
+  // Replaces login with Admin Home. Back cannot return to login.
+  void _openAdminHome() {
+    Navigator.of(context).pushNamedAndRemoveUntil('/admin', (route) => false);
+  }
+
+  // Replaces login with the normal user Home. Back cannot return to login.
+  void _openUserHome() {
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (context) => const UserHomeScreen()),
+      (route) => false,
+    );
   }
 
   @override

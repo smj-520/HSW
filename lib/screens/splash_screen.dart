@@ -5,7 +5,8 @@ import 'package:flutter/material.dart';
 import '../navigation/app_transitions.dart';
 import '../services/app_i18n.dart';
 import '../widgets/primary_action_button.dart';
-import 'onboarding_screen.dart';
+import '../widgets/responsive_layout.dart';
+import './onboarding_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -32,7 +33,7 @@ class _SplashScreenState extends State<SplashScreen>
       parent: _heroController,
       curve: Curves.easeOutBack,
     );
-    _autoNavigate = Timer(const Duration(milliseconds: 3200), _goOnboarding);
+    _autoNavigate = Timer(const Duration(seconds: 30), _goOnboarding);
   }
 
   void _goOnboarding() {
@@ -58,8 +59,8 @@ class _SplashScreenState extends State<SplashScreen>
         child: LayoutBuilder(
           builder: (context, constraints) {
             final w = constraints.maxWidth;
-            final pad = w >= 600 ? 40.0 : 28.0;
-            final maxCard = (w * 0.92).clamp(320.0, 520.0);
+            final pad = responsivePagePaddingX(w);
+            final maxCard = responsiveFormMaxWidth(w).clamp(320.0, w - pad * 2);
             final heroH = (constraints.maxHeight * 0.32).clamp(140.0, 260.0);
             return Padding(
               padding: EdgeInsets.symmetric(horizontal: pad),

@@ -1,9 +1,24 @@
+import 'dart:async';
+
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 
-import '../services/app_i18n.dart';
-import '../widgets/animated_appear.dart';
-import 'settings_screen.dart';
+import './bills_screen.dart';
+import './budget_screen.dart';
+import '../models/home_finance_data.dart';
+import '../navigation/app_transitions.dart';
+import '../services/finance_repository.dart';
+import '../services/user_profile_repository.dart';
+import '../theme/app_colors.dart';
+import '../utils/formatters.dart';
+import './report_screen.dart';
+import './transaction_screen.dart';
+import '../widgets/home_widgets.dart';
+import './add_transaction_screen.dart' hide AddBillScreen, ReportScreen;
+import './add_bill_screen.dart';
+import './home_screen.dart';
+import './settings_screen.dart';
 
 class UserHomeScreen extends StatefulWidget {
   const UserHomeScreen({super.key});
@@ -14,217 +29,163 @@ class UserHomeScreen extends StatefulWidget {
 
 class _UserHomeScreenState extends State<UserHomeScreen> {
   int _index = 0;
+  String _firstName = 'there';
+  HomeFinanceData _data = HomeFinanceData.empty();
+  final _financeRepo = FinanceRepository();
+  StreamSubscription<HomeFinanceData>? _financeSub;
 
   @override
-  Widget build(BuildContext context) {
-    final user = FirebaseAuth.instance.currentUser;
-    final email = user?.email ?? '';
+  void initState() {
+    super.initState();
+    _loadFirstName();
+    _listenFinance();
+  }
 
-    final pages = <Widget>[
-      _UserDashboard(email: email),
-      _UserEmptyTab(
-        icon: Icons.receipt_long_outlined,
-        titleEn: 'Transactions',
-        titleAr: 'المعاملات',
-      ),
-      _UserEmptyTab(
-        icon: Icons.add_circle_outline_rounded,
-        titleEn: 'Add',
-        titleAr: 'إضافة',
-      ),
-      _UserEmptyTab(
-        icon: Icons.pie_chart_outline_rounded,
-        titleEn: 'Report',
-        titleAr: 'تقرير',
-      ),
-      const SettingsScreen(isAdmin: false),
-    ];
+  @override
+  void dispose() {
+    _financeSub?.cancel();
+    super.dispose();
+  }
 
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: _index == 4
-          ? null
-          : AppBar(
-              title: Text(
-                AppI18n.t(
-                  context,
-                  en: 'User Home',
-                  ar: 'الصفحة الرئيسية للمستخدم',
-                ),
-              ),
-              automaticallyImplyLeading: false,
-            ),
-      body: SafeArea(
-        child: AnimatedSwitcher(
-          duration: const Duration(milliseconds: 260),
-          switchInCurve: Curves.easeOutCubic,
-          switchOutCurve: Curves.easeInCubic,
-          transitionBuilder: (child, animation) {
-            final curved = CurvedAnimation(
-              parent: animation,
-              curve: Curves.easeOutCubic,
-            );
-            return FadeTransition(
-              opacity: curved,
-              child: SlideTransition(
-                position: Tween<Offset>(
-                  begin: const Offset(0.02, 0),
-                  end: Offset.zero,
-                ).animate(curved),
-                child: child,
-              ),
-            );
-          },
-          child: KeyedSubtree(
-            key: ValueKey<int>(_index),
-            child: pages[_index],
-          ),
-        ),
-      ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _index,
-        onDestinationSelected: (next) => setState(() => _index = next),
-        destinations: [
-          NavigationDestination(
-            icon: const Icon(Icons.home_outlined),
-            selectedIcon: const Icon(Icons.home_rounded),
-            label: AppI18n.t(context, en: 'Home', ar: 'الرئيسية'),
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.receipt_long_outlined),
-            selectedIcon: const Icon(Icons.receipt_long_rounded),
-            label: AppI18n.t(context, en: 'Transactions', ar: 'المعاملات'),
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.add_circle_outline),
-            selectedIcon: const Icon(Icons.add_circle_rounded),
-            label: AppI18n.t(context, en: 'Add', ar: 'إضافة'),
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.pie_chart_outline),
-            selectedIcon: const Icon(Icons.pie_chart_rounded),
-            label: AppI18n.t(context, en: 'Report', ar: 'تقرير'),
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.settings_outlined),
-            selectedIcon: const Icon(Icons.settings_rounded),
-            label: AppI18n.t(context, en: 'Settings', ar: 'الإعدادات'),
-          ),
-        ],
+  User? get _sessionUser {
+    if (Firebase.apps.isEmpty) return null;
+    return FirebaseAuth.instance.currentUser;
+  }
+
+  void _listenFinance() {
+    _financeSub?.cancel();
+    final user = _sessionUser;
+    if (user == null) {
+      setState(() => _data = HomeFinanceData.empty());
+      return;
+    }
+    _financeSub = _financeRepo.watch(user.uid).listen(
+      (data) {
+        if (!mounted) return;
+        setState(() => _data = data);
+      },
+      onError: (_) {
+        if (!mounted) return;
+        setState(() => _data = HomeFinanceData.empty());
+      },
+    );
+  }
+
+  Future<void> _loadFirstName() async {
+    final user = _sessionUser;
+    Map<String, dynamic>? profile;
+    if (user != null) {
+      try {
+        profile = await UserProfileRepository().getUserProfile(user.uid);
+      } catch (_) {
+        profile = null;
+      }
+    }
+    if (!mounted) return;
+    final profileName = (profile?['displayName'] as String?)?.trim();
+    setState(() {
+      _firstName = resolveFirstName(
+        displayName: (profileName != null && profileName.isNotEmpty)
+            ? profileName
+            : user?.displayName,
+        email: user?.email,
+      );
+    });
+  }
+
+  void _openAdd(TransactionKind kind) {
+    Navigator.of(context).push(
+      AppTransitions.fadeSlideSheet(
+        AddTransactionScreen(kind: kind),
+        routeName: '/add-${kind.name}',
       ),
     );
   }
-}
 
-class _UserDashboard extends StatelessWidget {
-  const _UserDashboard({required this.email});
+  void _openBudget() {
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (context) => const BudgetScreen()),
+    );
+  }
 
-  final String email;
+  void _openAddBill() {
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (context) => const AddBillScreen()),
+    );
+  }
 
-  @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final pad = constraints.maxWidth >= 600 ? 32.0 : 24.0;
-        final maxW = (constraints.maxWidth * 0.92).clamp(320.0, 560.0);
-        return Center(
-          child: ConstrainedBox(
-            constraints: BoxConstraints(maxWidth: maxW),
-            child: SingleChildScrollView(
-              padding: EdgeInsets.all(pad),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  AnimatedAppear(
-                    index: 0,
-                    child: Icon(
-                      Icons.account_balance_wallet_rounded,
-                      size: 76,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-                  ),
-                  const SizedBox(height: 18),
-                  AnimatedAppear(
-                    index: 1,
-                    child: Text(
-                      AppI18n.t(context, en: 'Welcome', ar: 'مرحبًا'),
-                      style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                            fontSize: 28,
-                          ),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  AnimatedAppear(
-                    index: 2,
-                    child: Text(
-                      email,
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  AnimatedAppear(
-                    index: 3,
-                    child: Text(
-                      AppI18n.t(
-                        context,
-                        en: 'Track your wallet activity from this home page.',
-                        ar: 'تابع نشاط المحفظة من هذه الصفحة الرئيسية.',
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
+  Future<void> _openAddPicker() async {
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return AddTransactionPickerSheet(
+          onSelected: (kind) {
+            Navigator.of(context).pop();
+            _openAdd(kind);
+          },
         );
       },
     );
   }
-}
 
-class _UserEmptyTab extends StatelessWidget {
-  const _UserEmptyTab({
-    required this.icon,
-    required this.titleEn,
-    required this.titleAr,
-  });
-
-  final IconData icon;
-  final String titleEn;
-  final String titleAr;
+  void _onNavSelected(int index) {
+    if (index == 2) {
+      _openAddPicker();
+      return;
+    }
+    setState(() => _index = index);
+  }
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 56, color: scheme.primary.withValues(alpha: 0.85)),
-            const SizedBox(height: 16),
-            Text(
-              AppI18n.t(context, en: titleEn, ar: titleAr),
-              style: Theme.of(context).textTheme.titleLarge,
-              textAlign: TextAlign.center,
+    final pages = <Widget>[
+      HomeScreen(
+        firstName: _firstName,
+        data: _data,
+        onNotificationTap: () {
+          Navigator.of(context).push(
+            AppTransitions.fadeSlideSheet(
+              NotificationsScreen(bills: _data.bills),
+              routeName: '/notifications',
             ),
-            const SizedBox(height: 8),
-            Text(
-              AppI18n.t(
-                context,
-                en: 'This section is not available yet.',
-                ar: 'هذا القسم غير متوفر بعد.',
-              ),
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: scheme.onSurface.withValues(alpha: 0.72),
-                  ),
-            ),
-          ],
+          );
+        },
+        onAddExpense: () => _openAdd(TransactionKind.expense),
+        onAddIncome: () => _openAdd(TransactionKind.income),
+        onAddSaving: () => _openAdd(TransactionKind.saving),
+        onAddBill: _openAddBill,
+        onOpenBudget: _openBudget,
+        onViewAllOverview: () => setState(() => _index = 1),
+        onViewAllBills: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(builder: (context) => const BillsScreen()),
+          );
+        },
+      ),
+      const TransactionScreen(),
+      const SizedBox.shrink(),
+      const ReportScreen(),
+      const SettingsScreen(isAdmin: false),
+    ];
+
+    return Scaffold(
+      backgroundColor: AppColors.homeBackground,
+      body: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 260),
+        switchInCurve: Curves.easeOutCubic,
+        switchOutCurve: Curves.easeInCubic,
+        child: KeyedSubtree(
+          key: ValueKey<int>(_index),
+          child: pages[_index],
         ),
+      ),
+      bottomNavigationBar: HomeBottomNav(
+        currentIndex: _index,
+        onSelected: _onNavSelected,
       ),
     );
   }

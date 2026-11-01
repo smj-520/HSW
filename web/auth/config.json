@@ -1,6 +1,7 @@
 ﻿{
   "apiKey": "AIzaSyAyO0xK84hlhNa-w-Czz82yZ_5vyqxW-7w",
   "projectId": "b-teck",
+  "databaseURL": "https://b-teck-default-rtdb.firebaseio.com",
   "appName": "Hostel Student Wallet",
   "primaryColor": "#28A745",
   "supportEmail": "support@hostelwallet.app",

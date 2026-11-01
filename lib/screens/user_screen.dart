@@ -1,0 +1,202 @@
+import 'package:flutter/material.dart';
+
+import '../services/app_i18n.dart';
+import '../widgets/responsive_layout.dart';
+import '../models/admin_models.dart';
+import '../services/admin_services.dart';
+import '../widgets/admin_widgets.dart';
+
+// Admin page: search users, then block or unblock them.
+class UserScreen extends StatefulWidget {
+  const UserScreen({super.key});
+
+  @override
+  State<UserScreen> createState() => _UserScreenState();
+}
+
+class _UserScreenState extends State<UserScreen> {
+  final _userService = AdminUserService();
+  final _search = TextEditingController();
+  List<UserModel> userList = [];
+  bool isLoading = true;
+  String errorMessage = '';
+
+  @override
+  void initState() {
+    super.initState();
+    loadUsers();
+  }
+
+  @override
+  void dispose() {
+    _search.dispose();
+    super.dispose();
+  }
+
+  // Downloads the user list from Firebase.
+  Future<void> loadUsers() async {
+    setState(() {
+      isLoading = true;
+      errorMessage = '';
+    });
+    try {
+      final list = await _userService.loadUserList();
+      if (!mounted) return;
+      setState(() {
+        userList = list;
+        isLoading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        isLoading = false;
+        errorMessage = 'Could not load users. Check Firebase rules.';
+      });
+    }
+  }
+
+  // Keeps only users whose name or email contains the search text.
+  List<UserModel> filteredList() {
+    final q = _search.text.trim().toLowerCase();
+    if (q.isEmpty) return userList;
+    return userList.where((user) {
+      return user.name.toLowerCase().contains(q) ||
+          user.email.toLowerCase().contains(q);
+    }).toList();
+  }
+
+  // Asks "Are you sure?" then blocks or unblocks this user.
+  Future<void> blockUser(UserModel user) async {
+    final willBlock = !user.isBlocked;
+    final ok = await ConfirmDialog.show(
+      context,
+      message: willBlock
+          ? 'Block ${user.name}?'
+          : 'Unblock ${user.name}?',
+    );
+    if (!ok) return;
+    try {
+      await _userService.setBlocked(uid: user.uid, blocked: willBlock);
+      await loadUsers();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            AppI18n.t(context, en: 'Could not update this user.', ar: 'تعذر تحديث هذا المستخدم.'),
+          ),
+        ),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (errorMessage.isNotEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Text(errorMessage, textAlign: TextAlign.center),
+        ),
+      );
+    }
+
+    final visible = filteredList();
+    return ResponsiveContent(
+      child: Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+          child: TextField(
+            controller: _search,
+            decoration: InputDecoration(
+              hintText: AppI18n.t(context, en: 'Search name or email', ar: 'ابحث بالاسم أو البريد'),
+              prefixIcon: const Icon(Icons.search),
+            ),
+            onChanged: (_) => setState(() {}),
+          ),
+        ),
+        Expanded(
+          child: visible.isEmpty
+              ? Center(
+                  child: Text(
+                    AppI18n.t(context, en: 'Nothing here yet', ar: 'لا يوجد شيء هنا بعد'),
+                    style: const TextStyle(color: Colors.grey, fontSize: 16),
+                  ),
+                )
+              : ListView.builder(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                  itemCount: visible.length,
+                  itemBuilder: (context, index) {
+                    final user = visible[index];
+                    return _UserTile(
+                      user: user,
+                      onBlockTap: () => blockUser(user),
+                    );
+                  },
+                ),
+        ),
+      ],
+      ),
+    );
+  }
+}
+
+// One row: name, email, Active/Blocked, and a Block or Unblock button.
+class _UserTile extends StatelessWidget {
+  const _UserTile({required this.user, required this.onBlockTap});
+
+  final UserModel user;
+  final VoidCallback onBlockTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final statusColor = user.isBlocked ? Colors.red : Colors.green;
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    user.name,
+                    style: const TextStyle(fontWeight: FontWeight.w800),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(user.email, style: const TextStyle(color: Colors.grey)),
+                  const SizedBox(height: 4),
+                  Text(
+                    user.isBlocked
+                        ? AppI18n.t(context, en: 'Blocked', ar: 'محظور')
+                        : AppI18n.t(context, en: 'Active', ar: 'نشط'),
+                    style: TextStyle(
+                      color: statusColor,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (!user.isAdmin)
+              TextButton(
+                onPressed: onBlockTap,
+                child: Text(
+                  user.isBlocked
+                      ? AppI18n.t(context, en: 'Unblock', ar: 'إلغاء الحظر')
+                      : AppI18n.t(context, en: 'Block', ar: 'حظر'),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}

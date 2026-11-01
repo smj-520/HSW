@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 /// TextFormField with prefix icon, optional suffix, and soft error container.
 class AppTextField extends StatelessWidget {
@@ -18,6 +19,7 @@ class AppTextField extends StatelessWidget {
     this.focusNode,
     this.readOnly = false,
     this.suffixText,
+    this.inputFormatters,
   });
 
   final TextEditingController controller;
@@ -34,6 +36,7 @@ class AppTextField extends StatelessWidget {
   final FocusNode? focusNode;
   final bool readOnly;
   final String? suffixText;
+  final List<TextInputFormatter>? inputFormatters;
 
   @override
   Widget build(BuildContext context) {
@@ -50,6 +53,7 @@ class AppTextField extends StatelessWidget {
           onFieldSubmitted: onFieldSubmitted,
           autofillHints: autofillHints,
           readOnly: readOnly,
+          inputFormatters: inputFormatters,
           style: const TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w500,

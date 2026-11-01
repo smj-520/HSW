@@ -18,6 +18,21 @@
 
       <div id="message" class="alert info">Please wait…</div>
 
+      <section id="otpSection" class="hidden" aria-live="polite">
+        <label for="otpCode">6-digit code</label>
+        <input
+          id="otpCode"
+          type="text"
+          inputmode="numeric"
+          maxlength="6"
+          autocomplete="one-time-code"
+          placeholder="000000"
+        />
+        <div class="row">
+          <button id="otpBtn" class="primary" type="button">Verify code</button>
+        </div>
+      </section>
+
       <section id="resetSection" class="hidden" aria-live="polite">
         <p class="policy-hint">
           At least 8 characters, with uppercase, lowercase, a number, and a symbol (e.g. ! @ #).

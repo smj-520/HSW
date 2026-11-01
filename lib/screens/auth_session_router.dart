@@ -2,15 +2,16 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 
+import './admin_home_screen.dart';
+import '../services/admin_services.dart';
 import '../navigation/app_transitions.dart';
 import '../services/user_profile_repository.dart';
-import '../widgets/gentle_pulse.dart';
-import 'admin_home_screen.dart';
-import 'login_screen.dart';
-import 'splash_screen.dart';
-import 'user_home_screen.dart';
+import '../widgets/motion_widgets.dart';
+import './login_screen.dart';
+import './splash_screen.dart';
+import './user_home_screen.dart';
 
-/// After Firebase is ready: resume an existing session or show splash / login.
+// After Firebase is ready: resume an existing session or show splash / login.
 class AuthSessionRouter extends StatefulWidget {
   const AuthSessionRouter({super.key});
 
@@ -19,12 +20,15 @@ class AuthSessionRouter extends StatefulWidget {
 }
 
 class _AuthSessionRouterState extends State<AuthSessionRouter> {
+  final _adminAuth = AdminAuthService();
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) => _route());
   }
 
+  // Picks splash, login, admin home, or user home.
   Future<void> _route() async {
     if (!mounted) return;
 
@@ -39,24 +43,24 @@ class _AuthSessionRouterState extends State<AuthSessionRouter> {
       return;
     }
 
-    if (!user.emailVerified) {
-      _replace(const LoginScreen());
-      return;
-    }
-
-    String? role;
+    // Blocked people are signed out and sent to Login.
     try {
-      role = await UserProfileRepository()
-          .getUserRole(user.uid)
-          .timeout(const Duration(seconds: 12));
+      final blocked = await UserProfileRepository().isBlocked(user.uid);
+      if (blocked) {
+        await FirebaseAuth.instance.signOut();
+        if (!mounted) return;
+        _replace(const LoginScreen());
+        return;
+      }
+    } catch (_) {}
+
+    String role = 'user';
+    try {
+      role = await _adminAuth.getRole(user.uid).timeout(const Duration(seconds: 12));
     } catch (_) {
-      role = null;
+      role = 'user';
     }
     if (!mounted) return;
-
-    final normalized = (role ?? 'user').toLowerCase();
-    final next =
-        normalized == 'admin' ? const AdminHomeScreen() : const UserHomeScreen();
 
     try {
       await UserProfileRepository().touchLastLogin(user.uid);
@@ -64,11 +68,24 @@ class _AuthSessionRouterState extends State<AuthSessionRouter> {
 
     if (!mounted) return;
 
+    if (_adminAuth.isAdmin(role)) {
+      _openAdminHome();
+    } else {
+      _openUserHome();
+    }
+  }
+
+  // Opens Admin Home and removes this router page.
+  void _openAdminHome() {
     Navigator.of(context).pushReplacement(
-      AppTransitions.fadeSlide(
-        next,
-        routeName: normalized == 'admin' ? '/admin-home' : '/user-home',
-      ),
+      MaterialPageRoute(builder: (context) => const AdminHomeScreen()),
+    );
+  }
+
+  // Opens the normal user Home and removes this router page.
+  void _openUserHome() {
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(builder: (context) => const UserHomeScreen()),
     );
   }
 

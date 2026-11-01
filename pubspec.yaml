@@ -44,6 +44,10 @@ dependencies:
   shared_preferences: ^2.5.3
   flutter_secure_storage: ^9.2.4
   intl: ^0.20.2
+  fl_chart: ^1.1.1
+  pdf: ^3.13.1
+  printing: ^5.15.1
+  url_launcher: ^6.3.2
 
 dev_dependencies:
   flutter_test:
@@ -70,6 +74,7 @@ flutter:
   assets:
     - assets/branding/splash_wallet_hero.png
     - assets/branding/onboarding_hero.png
+    - assets/branding/about_hero.jpg
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

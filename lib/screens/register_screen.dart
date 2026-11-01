@@ -4,19 +4,17 @@ import 'package:phone_numbers_parser/phone_numbers_parser.dart';
 
 import '../navigation/app_transitions.dart';
 import '../services/app_i18n.dart';
-import '../services/auth_action_settings.dart';
 import '../services/auth_error_messages.dart';
 import '../services/user_profile_repository.dart';
 import '../utils/form_validators.dart';
 import '../widgets/app_text_field.dart';
-import '../widgets/auth_form_frame.dart';
+import '../widgets/auth_widgets.dart';
 import '../widgets/loading_overlay.dart';
 import '../widgets/primary_action_button.dart';
-import '../widgets/auth_form_footer_branding.dart';
 import '../widgets/responsive_layout.dart';
-import '../widgets/rounded_back_button.dart';
 import '../widgets/styled_country_phone_field.dart';
-import 'login_screen.dart';
+import './login_screen.dart';
+import './user_home_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -94,7 +92,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       return;
     }
 
-    final email = FormValidators.normalizeGmail(_email.text);
+    final email = FormValidators.normalizeEmail(_email.text);
     final rawPhone = _phone.text.trim().replaceAll(RegExp(r'[\s-]'), '');
     late final String e164;
     try {
@@ -113,7 +111,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       );
       return;
     }
-
+//hashing...
     setState(() => _loading = true);
     try {
       final cred = await FirebaseAuth.instance.createUserWithEmailAndPassword(
@@ -122,19 +120,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
       );
       final user = cred.user!;
       await user.updateDisplayName(_name.text.trim());
-      if (hasCustomAuthHandlerUrl) {
-        await user.sendEmailVerification(
-          ActionCodeSettings(
-            url: kCustomAuthHandlerUrl,
-            handleCodeInApp: false,
-            androidPackageName: 'com.example.cpp',
-            androidInstallApp: true,
-            androidMinimumVersion: '23',
-          ),
-        );
-      } else {
-        await user.sendEmailVerification();
-      }
       try {
         await _profileRepo.saveNewUserProfile(
           uid: user.uid,
@@ -165,39 +150,30 @@ class _RegisterScreenState extends State<RegisterScreen> {
       }
       if (!mounted) return;
       setState(() => _loading = false);
-      await showDialog<void>(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          title: Text(
-            AppI18n.t(ctx, en: 'Verify your Gmail', ar: 'تحقق من Gmail'),
-          ),
-          content: Text(
-            AppI18n.t(
-              ctx,
-              en:
-                  'We sent a verification link to $email. '
-                  'Open Gmail and tap the link to activate your account.',
-              ar:
-                  'أرسلنا رابط تحقق إلى $email. '
-                  'افتح Gmail واضغط الرابط لتفعيل حسابك.',
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: Text(AppI18n.t(ctx, en: 'OK', ar: 'حسنًا')),
-            ),
-          ],
-        ),
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (context) => const UserHomeScreen()),
+        (route) => false,
       );
-      if (!mounted) return;
-      Navigator.of(context).pop();
     } on FirebaseAuthException catch (e) {
       if (!mounted) return;
       setState(() => _loading = false);
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(authErrorMessage(e))));
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _loading = false);
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (context) => const UserHomeScreen()),
+          (route) => false,
+        );
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('$e')),
+      );
     }
   }
 
@@ -250,7 +226,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           child: Form(
                             key: _formKey,
                             autovalidateMode:
-                                AutovalidateMode.onUserInteraction,
+                            AutovalidateMode.onUserInteraction,
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
@@ -262,8 +238,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   ),
                                   subtitle: AppI18n.t(
                                     context,
-                                    en: 'Gmail only • Oman (+968) • Strong password required',
-                                    ar: 'Gmail فقط • عُمان (+968) • كلمة مرور قوية مطلوبة',
+                                    en: 'Any Email • Oman (+968) • Strong password required',
+                                    ar: ' اي بريد الكتروني • عُمان (+968) • كلمة مرور قوية مطلوبة',
                                   ),
                                   logoHeight: logoH,
                                 ),
@@ -293,20 +269,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   controller: _email,
                                   label: AppI18n.t(
                                     context,
-                                    en: 'Gmail username',
-                                    ar: 'اسم مستخدم Gmail',
+                                    en: 'Email',
+                                    ar: 'البريد الالكتروني',
                                   ),
                                   hint: AppI18n.t(
                                     context,
-                                    en: 'yourname',
-                                    ar: 'yourname',
+                                    en: 'example@email.com',
+                                    ar: 'example@email.com',
                                   ),
                                   prefixIcon: Icons.alternate_email_rounded,
-                                  suffixText: '@gmail.com',
                                   keyboardType: TextInputType.emailAddress,
                                   textInputAction: TextInputAction.next,
                                   autofillHints: const [AutofillHints.email],
-                                  validator: FormValidators.gmailUsername,
+                                  validator: FormValidators.emailAddress,
                                 ),
                                 const SizedBox(height: 16),
                                 StyledCountryPhoneField(
@@ -340,7 +315,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   validator: FormValidators.strongPassword,
                                   suffix: IconButton(
                                     onPressed: () => setState(
-                                      () => _obscurePass = !_obscurePass,
+                                          () => _obscurePass = !_obscurePass,
                                     ),
                                     icon: Icon(
                                       _obscurePass
@@ -363,12 +338,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                     FormValidators.passwordPolicyHint(),
                                     style: Theme.of(context).textTheme.bodySmall
                                         ?.copyWith(
-                                          color: Theme.of(context)
-                                              .colorScheme
-                                              .onSurface
-                                              .withValues(alpha: 0.68),
-                                          height: 1.35,
-                                        ),
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurface
+                                          .withValues(alpha: 0.68),
+                                      height: 1.35,
+                                    ),
                                   ),
                                 ),
                                 const SizedBox(height: 16),
@@ -389,7 +364,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   validator: _confirmValidator,
                                   suffix: IconButton(
                                     onPressed: () => setState(
-                                      () => _obscureConfirm = !_obscureConfirm,
+                                          () => _obscureConfirm = !_obscureConfirm,
                                     ),
                                     icon: Icon(
                                       _obscureConfirm
@@ -419,15 +394,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                     onPressed: _loading
                                         ? null
                                         : () {
-                                            Navigator.of(
-                                              context,
-                                            ).pushReplacement(
-                                              AppTransitions.fadeSlide(
-                                                const LoginScreen(),
-                                                routeName: '/login',
-                                              ),
-                                            );
-                                          },
+                                      Navigator.of(
+                                        context,
+                                      ).pushReplacement(
+                                        AppTransitions.fadeSlide(
+                                          const LoginScreen(),
+                                          routeName: '/login',
+                                        ),
+                                      );
+                                    },
                                     child: Text(
                                       AppI18n.t(
                                         context,

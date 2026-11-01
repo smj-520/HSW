@@ -9,12 +9,22 @@ import 'package:firebase_database/firebase_database.dart';
 /// **Passwords are never written here.** Firebase Authentication stores credentials
 /// securely (hashed server-side). This node stores **metadata** only, e.g.
 /// `hasPassword`, `passwordUpdatedAt`, `lastLoginAt` — never password material.
+/// Do not write default income, expenses, savings, bills, or balance here.
 ///
-/// Set rules in Firebase console, for example:
 /// ```json
 /// {
 ///   "rules": {
 ///     "users": {
+///       ".read": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'",
+///       "$uid": {
+///         ".read": "auth != null && (auth.uid === $uid || root.child('users').child(auth.uid).child('role').val() === 'admin')",
+///         ".write": "auth != null && (auth.uid === $uid || root.child('users').child(auth.uid).child('role').val() === 'admin')",
+///         "role": {
+///           ".validate": "(!data.exists() && newData.val() === 'user') || (data.exists() && newData.val() === data.val())"
+///         }
+///       }
+///     },
+///     "finance": {
 ///       "$uid": {
 ///         ".read": "$uid === auth.uid",
 ///         ".write": "$uid === auth.uid"
@@ -74,6 +84,12 @@ class UserProfileRepository {
       return value.trim().toLowerCase();
     }
     return null;
+  }
+
+  // True only when the database field blocked is exactly true.
+  Future<bool> isBlocked(String uid) async {
+    final snapshot = await _users.child(uid).child('blocked').get();
+    return snapshot.value == true;
   }
 
   Future<Map<String, dynamic>?> getUserProfile(String uid) async {

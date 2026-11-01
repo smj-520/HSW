@@ -1,7 +1,24 @@
-﻿/// Set this to your deployed custom auth handler URL, e.g.
-/// https://your-domain.com/auth/index.html
-///
-/// Keep it empty to use Firebase default hosted pages.
+import 'package:firebase_auth/firebase_auth.dart';
+
+/// Deployed custom auth handler (Spark Hosting). Used for reset + verify emails.
 const String kCustomAuthHandlerUrl = 'https://b-teck.web.app/auth/index.html';
 
 bool get hasCustomAuthHandlerUrl => kCustomAuthHandlerUrl.trim().isNotEmpty;
+
+ActionCodeSettings authActionCodeSettings() {
+  return ActionCodeSettings(
+    url: kCustomAuthHandlerUrl.trim(),
+    handleCodeInApp: false,
+    androidPackageName: 'com.example.cpp',
+    androidInstallApp: true,
+    androidMinimumVersion: '23',
+  );
+}
+
+Future<void> sendAppEmailVerification(User user) async {
+  if (hasCustomAuthHandlerUrl) {
+    await user.sendEmailVerification(authActionCodeSettings());
+    return;
+  }
+  await user.sendEmailVerification();
+}

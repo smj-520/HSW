@@ -1,17 +1,13 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../services/app_i18n.dart';
-import '../services/auth_action_settings.dart';
-import '../services/auth_error_messages.dart';
+import '../services/password_reset_service.dart';
 import '../utils/form_validators.dart';
 import '../widgets/app_text_field.dart';
-import '../widgets/auth_form_footer_branding.dart';
-import '../widgets/auth_form_frame.dart';
+import '../widgets/auth_widgets.dart';
 import '../widgets/loading_overlay.dart';
 import '../widgets/primary_action_button.dart';
 import '../widgets/responsive_layout.dart';
-import '../widgets/rounded_back_button.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
@@ -37,51 +33,36 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     final email = FormValidators.normalizeEmail(_email.text);
     setState(() => _loading = true);
     try {
-      if (hasCustomAuthHandlerUrl) {
-        await FirebaseAuth.instance.sendPasswordResetEmail(
-          email: email,
-          actionCodeSettings: ActionCodeSettings(
-            url: kCustomAuthHandlerUrl,
-            handleCodeInApp: false,
-            androidPackageName: 'com.example.cpp',
-            androidInstallApp: true,
-            androidMinimumVersion: '23',
-          ),
-        );
-      } else {
-        await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
-      }
+      await PasswordResetService().sendCode(email);
       if (!mounted) return;
-      setState(() => _loading = false);
-      await showDialog<void>(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          title: Text(
-            AppI18n.t(ctx, en: 'Check your email', ar: 'تحقق من بريدك'),
-          ),
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
           content: Text(
             AppI18n.t(
-              ctx,
-              en: 'If an account exists for $email, we sent a password reset link. Open your inbox and follow the link (it may expire after a while).',
-              ar: 'إذا كان هناك حساب مرتبط بـ $email، تم إرسال رابط إعادة تعيين كلمة المرور. افتح صندوق الوارد واتبع الرابط.',
+              context,
+              en:
+                  'If an account exists, we sent a password reset link. Open it in your email.',
+              ar:
+                  'إذا كان هناك حساب، أرسلنا رابط إعادة تعيين كلمة المرور. افتحه من بريدك.',
             ),
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: Text(AppI18n.t(ctx, en: 'OK', ar: 'حسنًا')),
-            ),
-          ],
         ),
       );
+      if (Navigator.of(context).canPop()) {
+        Navigator.of(context).pop();
+      }
+    } catch (e) {
       if (!mounted) return;
-      Navigator.of(context).pop();
-    } on FirebaseAuthException catch (e) {
-      if (!mounted) return;
-      setState(() => _loading = false);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(authErrorMessage(e))));
+      final message = e is PasswordResetException
+          ? e.message
+          : AppI18n.t(
+              context,
+              en: 'Could not send the email. Try again.',
+              ar: 'تعذر إرسال البريد. حاول مرة أخرى.',
+            );
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    } finally {
+      if (mounted) setState(() => _loading = false);
     }
   }
 
@@ -91,8 +72,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       loading: _loading,
       message: AppI18n.t(
         context,
-        en: 'Sending email…',
-        ar: 'جارٍ إرسال البريد...',
+        en: 'Sending reset email…',
+        ar: 'جارٍ إرسال بريد إعادة التعيين...',
       ),
       child: Scaffold(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -146,8 +127,10 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                                   ),
                                   subtitle: AppI18n.t(
                                     context,
-                                    en: 'Enter your email — we will send a reset link.',
-                                    ar: 'أدخل بريدك الإلكتروني لإرسال رابط إعادة التعيين.',
+                                    en:
+                                        'Enter your email — we will send a password reset link.',
+                                    ar:
+                                        'أدخل بريدك — سنرسل رابط إعادة تعيين كلمة المرور.',
                                   ),
                                   logoHeight: logoH,
                                 ),
@@ -178,7 +161,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                                   ),
                                   isLoading: _loading,
                                   inlineProgress: false,
-                                  onPressed: _submit,
+                                  onPressed: _loading ? null : _submit,
                                 ),
                               ],
                             ),

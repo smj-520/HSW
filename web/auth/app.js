@@ -12,6 +12,9 @@
 const titleEl = document.getElementById('title');
 const subtitleEl = document.getElementById('subtitle');
 const messageEl = document.getElementById('message');
+const otpSection = document.getElementById('otpSection');
+const otpCodeEl = document.getElementById('otpCode');
+const otpBtn = document.getElementById('otpBtn');
 const resetSection = document.getElementById('resetSection');
 const saveBtn = document.getElementById('saveBtn');
 const brandName = document.getElementById('brandName');
@@ -22,8 +25,10 @@ const oobCode = query.get('oobCode');
 const continueUrl = query.get('continueUrl');
 
 let apiKey = '';
+let databaseURL = '';
 let appName = 'Hostel Student Wallet';
 let configuredContinueUrl = '';
+let recoveredEmail = '';
 
 function setMessage(type, text) {
   messageEl.className = `alert ${type}`;
@@ -88,12 +93,75 @@ function validatePassword(pass) {
   return null;
 }
 
+function otpFromLink() {
+  const direct = (query.get('otp') || '').trim();
+  if (/^\d{6}$/.test(direct)) return direct;
+  if (!continueUrl) return '';
+  try {
+    const nested = new URL(continueUrl).searchParams.get('otp') || '';
+    return /^\d{6}$/.test(nested.trim()) ? nested.trim() : '';
+  } catch (e) {
+    return '';
+  }
+}
+
+async function sha256Hex(text) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+  return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function otpMatchesDatabase(email, digits) {
+  if (!databaseURL || !email) return false;
+  const key = await sha256Hex(String(email).trim().toLowerCase());
+  const url = `${databaseURL.replace(/\/$/, '')}/passwordResetOtps/${key}.json`;
+  const res = await fetch(url);
+  if (!res.ok) return false;
+  const row = await res.json();
+  if (!row || !row.otpHash) return false;
+  if (Number(row.expiresAt) < Date.now()) return false;
+  const hash = await sha256Hex(`otp:${digits}`);
+  return hash === row.otpHash;
+}
+
+async function checkEnteredOtp() {
+  const digits = (otpCodeEl.value || '').replace(/\D/g, '');
+  if (digits.length !== 6) {
+    throw new Error('Enter the 6-digit code from the email link.');
+  }
+  const fromLink = otpFromLink();
+  if (fromLink && digits === fromLink) return true;
+  const ok = await otpMatchesDatabase(recoveredEmail, digits);
+  if (!ok) {
+    throw new Error('Invalid or expired code.');
+  }
+  return true;
+}
+
+function showOtpStep(onVerified) {
+  otpSection.classList.remove('hidden');
+  setMessage('info', 'Enter the 6-digit code from the email link (otp=), then continue.');
+  otpBtn.onclick = async () => {
+    otpBtn.disabled = true;
+    try {
+      await checkEnteredOtp();
+      otpSection.classList.add('hidden');
+      await onVerified();
+    } catch (e) {
+      setMessage('error', e.message || 'Invalid code.');
+      otpBtn.disabled = false;
+    }
+  };
+}
+
 async function handleVerifyEmail() {
   titleEl.textContent = 'Verify your email';
-  subtitleEl.textContent = 'Applying verification…';
-  await firebasePost('accounts:update', { oobCode });
-  subtitleEl.textContent = 'Email verified';
-  setMessage('success', 'Your Gmail is verified successfully.');
+  subtitleEl.textContent = 'Enter the 6-digit code, then we will verify your email';
+  recoveredEmail = '';
+  showOtpStep(async () => {
+    await firebasePost('accounts:update', { oobCode });
+    subtitleEl.textContent = 'Email verified';
+    setMessage('success', 'Your email is verified successfully. You can sign in now.');
+  });
 }
 
 async function handleRecoverEmail() {
@@ -106,9 +174,17 @@ async function handleRecoverEmail() {
 
 async function handleResetPassword() {
   titleEl.textContent = 'Reset password';
-  subtitleEl.textContent = 'Create a new secure password';
-  setMessage('info', 'Choose a new password for your Hostel Student Wallet account.');
-  resetSection.classList.remove('hidden');
+  subtitleEl.textContent = 'Verify the 6-digit code, then create a new password';
+  try {
+    const data = await firebasePost('accounts:resetPassword', { oobCode });
+    recoveredEmail = data.email || '';
+  } catch (e) {
+    throw e;
+  }
+  showOtpStep(async () => {
+    setMessage('info', 'Choose a new password for your Hostel Student Wallet account.');
+    resetSection.classList.remove('hidden');
+  });
 
   saveBtn.addEventListener('click', async () => {
     const pass = document.getElementById('newPassword').value.trim();
@@ -150,6 +226,7 @@ async function bootstrap() {
     const cfgRes = await fetch('./config.json', { cache: 'no-store' });
     const cfg = await cfgRes.json();
     apiKey = cfg.apiKey || '';
+    databaseURL = cfg.databaseURL || '';
     appName = cfg.appName || appName;
     configuredContinueUrl = cfg.continueUrl || configuredContinueUrl;
     brandName.textContent = appName;

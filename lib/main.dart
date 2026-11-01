@@ -6,14 +6,19 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter/services.dart';
 
-import 'firebase_options.dart';
-import 'services/app_i18n.dart';
-import 'services/app_settings_controller.dart';
-import 'screens/auth_session_router.dart';
-import 'theme/app_theme.dart';
+import './screens/admin_home_screen.dart';
+import './firebase_options.dart';
+import './services/app_i18n.dart';
+import './services/app_settings_controller.dart';
+import './screens/auth_session_router.dart';
+import './screens/login_screen.dart';
+import './theme/app_theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  try {
+    await AppSettingsController.instance.load();
+  } catch (_) {}
   runApp(const MyApp());
 }
 
@@ -33,8 +38,8 @@ class MyApp extends StatelessWidget {
             pageTransitionsTheme: const PageTransitionsTheme(
               builders: {
                 TargetPlatform.android: FadeForwardsPageTransitionsBuilder(),
-                TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
-                TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
+                TargetPlatform.iOS: FadeForwardsPageTransitionsBuilder(),
+                TargetPlatform.macOS: FadeForwardsPageTransitionsBuilder(),
                 TargetPlatform.linux: FadeForwardsPageTransitionsBuilder(),
                 TargetPlatform.windows: FadeForwardsPageTransitionsBuilder(),
                 TargetPlatform.fuchsia: FadeForwardsPageTransitionsBuilder(),
@@ -48,11 +53,23 @@ class MyApp extends StatelessWidget {
             Locale('en'),
             Locale('ar'),
           ],
+          localeResolutionCallback: (_, __) => settings.locale,
+          builder: (context, child) {
+            return Directionality(
+              textDirection:
+                  settings.isArabic ? TextDirection.rtl : TextDirection.ltr,
+              child: child ?? const SizedBox.shrink(),
+            );
+          },
           localizationsDelegates: const [
             GlobalMaterialLocalizations.delegate,
             GlobalWidgetsLocalizations.delegate,
             GlobalCupertinoLocalizations.delegate,
           ],
+          routes: {
+            '/login': (_) => const LoginScreen(),
+            '/admin': (_) => const AdminHomeScreen(),
+          },
           home: const _FirebaseBootstrap(),
         );
       },

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'app_settings_controller.dart';
+import './app_settings_controller.dart';
 
 /// UI copy EN/AR. [t] uses [MaterialApp.locale]; [ts] uses the same source as
 /// locale ([AppSettingsController]) for validators/services without [BuildContext].

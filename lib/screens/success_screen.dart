@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 
 import '../navigation/app_transitions.dart';
 import '../services/app_i18n.dart';
-import '../widgets/animated_page_content.dart';
+import '../widgets/motion_widgets.dart';
 import '../widgets/hostel_brand.dart';
 import '../widgets/primary_action_button.dart';
 import '../widgets/responsive_layout.dart';
-import 'login_screen.dart';
+import './login_screen.dart';
 
 class SuccessScreen extends StatelessWidget {
   const SuccessScreen({super.key});

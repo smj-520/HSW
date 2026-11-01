@@ -2,14 +2,13 @@ import 'package:flutter/material.dart';
 
 import '../navigation/app_transitions.dart';
 import '../services/app_i18n.dart';
-import '../widgets/animated_page_content.dart';
-import '../widgets/gentle_pulse.dart';
+import '../widgets/motion_widgets.dart';
 import '../widgets/primary_action_button.dart';
 import '../widgets/responsive_layout.dart';
-import '../widgets/rounded_back_button.dart';
-import 'login_screen.dart';
-import 'register_screen.dart';
-import 'splash_screen.dart';
+import '../widgets/auth_widgets.dart';
+import './login_screen.dart';
+import './register_screen.dart';
+import './splash_screen.dart';
 
 /// Single onboarding step matching reference: budgets + goals, two green actions.
 class OnboardingScreen extends StatelessWidget {
@@ -37,7 +36,7 @@ class OnboardingScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final mq = MediaQuery.sizeOf(context);
     final illoH = (mq.shortestSide * 0.38).clamp(168.0, 248.0);
-    final maxCol = responsiveFormMaxWidth(mq.width).clamp(320.0, 560.0) + 48;
+    final maxCol = responsiveFormMaxWidth(mq.width);
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,

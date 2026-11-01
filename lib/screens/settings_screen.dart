@@ -9,16 +9,18 @@ import '../services/remember_credentials.dart';
 import '../services/auth_error_messages.dart';
 import '../services/user_profile_repository.dart';
 import '../theme/app_colors.dart';
-import '../utils/app_date_format.dart';
+import '../utils/formatters.dart';
 import '../utils/form_validators.dart';
-import '../widgets/animated_appear.dart';
-import '../widgets/animated_page_content.dart';
+import '../widgets/motion_widgets.dart';
 import '../widgets/app_text_field.dart';
 import '../widgets/loading_overlay.dart';
 import '../widgets/primary_action_button.dart';
+import '../widgets/responsive_layout.dart';
 import '../widgets/styled_country_phone_field.dart';
-import 'ai_chatbot_screen.dart';
-import 'login_screen.dart';
+import './about_application_page.dart';
+import './ai_chatbot_screen.dart';
+import './login_screen.dart';
+import './send_feedback_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key, required this.isAdmin});
@@ -46,15 +48,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   : context.tr('User Settings', 'إعدادات المستخدم'),
             ),
           ),
-          body: LayoutBuilder(
-            builder: (context, constraints) {
-              final maxW = constraints.maxWidth >= 720 ? 560.0 : double.infinity;
-              return Align(
-                alignment: Alignment.topCenter,
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(maxWidth: maxW),
+          body: ResponsiveContent(
                   child: ListView(
-                    padding: const EdgeInsets.all(16),
+                    padding: EdgeInsets.all(
+                      responsivePagePaddingX(MediaQuery.sizeOf(context).width),
+                    ),
                     children: [
                 AnimatedAppear(
                   index: 0,
@@ -78,6 +76,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                   ),
                 ),
+                if (!widget.isAdmin) ...[
+                  const SizedBox(height: 12),
+                  AnimatedAppear(
+                    index: 0,
+                    child: _sectionCard(
+                      title: context.tr('Feedback', 'ملاحظات'),
+                      child: _optionTile(
+                        icon: Icons.rate_review_outlined,
+                        title: context.tr('Send feedback', 'إرسال ملاحظات'),
+                        subtitle: context.tr(
+                          'Tell the admin what you think',
+                          'أخبر المدير برأيك',
+                        ),
+                        onTap: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (context) => const SendFeedbackScreen(),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 12),
                 AnimatedAppear(
                   index: 1,
@@ -187,7 +209,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           onTap: () async {
                             await Navigator.of(context).push(
                               AppTransitions.fadeSlideSheet(
-                                _AboutPage(isAdmin: widget.isAdmin),
+                                AboutApplicationPage(isAdmin: widget.isAdmin),
                                 routeName: '/settings/about',
                               ),
                             );
@@ -317,9 +339,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
                     ],
                   ),
-                ),
-              );
-            },
           ),
         );
       },
@@ -944,81 +963,3 @@ class _PrivacyPage extends StatelessWidget {
   }
 }
 
-class _AboutPage extends StatelessWidget {
-  const _AboutPage({required this.isAdmin});
-
-  final bool isAdmin;
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(
-        title: Text(context.tr('About application', 'حول التطبيق')),
-      ),
-      body: AnimatedPageContent(
-        duration: const Duration(milliseconds: 340),
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            ListTile(
-            leading: Icon(
-              Icons.account_balance_wallet_rounded,
-              color: Theme.of(context).colorScheme.primary,
-            ),
-            title: Text(
-              AppI18n.t(
-                context,
-                en: 'Hostel Student Wallet',
-                ar: 'محفظة الطالب السكنية',
-              ),
-            ),
-            subtitle: Text(
-              AppI18n.t(context, en: 'Version 1.0.0', ar: 'نسخة 1.0.0'),
-            ),
-          ),
-          if (isAdmin) ...[
-            const SizedBox(height: 6),
-            ListTile(
-              leading: Icon(
-                Icons.admin_panel_settings_outlined,
-                color: Theme.of(context).colorScheme.primary,
-              ),
-              title: Text(
-                context.tr('Administration panel', 'لوحة الإدارة'),
-              ),
-              subtitle: Text(
-                AppI18n.t(
-                  context,
-                  en:
-                      'This account has elevated permissions for user and settings administration.',
-                  ar:
-                      'هذه النسخة تتضمن صلاحيات إدارة المستخدمين والإعدادات.',
-                ),
-              ),
-            ),
-          ],
-          const SizedBox(height: 6),
-          Text(
-            AppI18n.t(
-              context,
-              en:
-                  'A simple and secure app for student wallet and expense management.',
-              ar:
-                  'تطبيق لإدارة المصروفات والحسابات للطلاب بشكل بسيط وآمن.',
-            ),
-          ),
-          const SizedBox(height: 10),
-          Text(
-            AppI18n.t(
-              context,
-              en: 'Support: support@hostelwallet.app',
-              ar: 'الدعم: support@hostelwallet.app',
-            ),
-          ),
-          ],
-        ),
-      ),
-    );
-  }
-}

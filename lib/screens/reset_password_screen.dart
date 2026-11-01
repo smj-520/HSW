@@ -2,24 +2,27 @@ import 'package:flutter/material.dart';
 
 import '../navigation/app_transitions.dart';
 import '../services/app_i18n.dart';
+import '../services/password_reset_service.dart';
 import '../utils/form_validators.dart';
-import '../widgets/animated_page_content.dart';
+import '../widgets/motion_widgets.dart';
 import '../widgets/app_text_field.dart';
 import '../widgets/hostel_brand.dart';
 import '../widgets/loading_overlay.dart';
 import '../widgets/primary_action_button.dart';
 import '../widgets/responsive_layout.dart';
-import 'success_screen.dart';
+import './login_screen.dart';
 
 class ResetPasswordScreen extends StatefulWidget {
   const ResetPasswordScreen({
     super.key,
     this.recoveryEmail,
     this.previousPassword,
+    this.resetToken,
   });
 
   final String? recoveryEmail;
   final String? previousPassword;
+  final String? resetToken;
 
   @override
   State<ResetPasswordScreen> createState() => _ResetPasswordScreenState();
@@ -69,16 +72,49 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   Future<void> _submit() async {
     FocusScope.of(context).unfocus();
     if (!(_formKey.currentState?.validate() ?? false)) return;
+    final email = widget.recoveryEmail?.trim() ?? '';
+    if (email.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            AppI18n.t(
+              context,
+              en: 'Open Forgot password and use the email reset link.',
+              ar: 'افتح نسيت كلمة المرور واستخدم رابط البريد.',
+            ),
+          ),
+        ),
+      );
+      return;
+    }
     setState(() => _loading = true);
-    await Future<void>.delayed(const Duration(milliseconds: 1000));
-    if (!mounted) return;
-    setState(() => _loading = false);
-    await Navigator.of(context).pushReplacement(
-      AppTransitions.fadeSlide(
-        const SuccessScreen(),
-        routeName: '/success',
-      ),
-    );
+    try {
+      await PasswordResetService().sendCode(email);
+      if (!mounted) return;
+      setState(() => _loading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            AppI18n.t(
+              context,
+              en: 'Check your email and open the reset link to set a new password.',
+              ar: 'تحقق من بريدك وافتح رابط إعادة التعيين لتعيين كلمة مرور جديدة.',
+            ),
+          ),
+        ),
+      );
+      Navigator.of(context).pushAndRemoveUntil(
+        AppTransitions.fadeSlide(
+          const LoginScreen(),
+          routeName: '/login',
+        ),
+        (route) => false,
+      );
+    } on PasswordResetException catch (e) {
+      if (!mounted) return;
+      setState(() => _loading = false);
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
+    }
   }
 
   @override
@@ -226,7 +262,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                       label: AppI18n.t(context, en: 'Save', ar: 'حفظ'),
                       isLoading: _loading,
                       inlineProgress: false,
-                      onPressed: _submit,
+                      onPressed: _loading ? null : _submit,
                     ),
                   ],
                 ),

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../services/app_i18n.dart';
-import '../widgets/animated_appear.dart';
+import '../widgets/motion_widgets.dart';
 
 /// Placeholder UI for future AI chatbot integration (API / backend).
 class AiChatbotScreen extends StatelessWidget {

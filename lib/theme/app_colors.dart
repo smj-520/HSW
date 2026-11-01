@@ -26,4 +26,14 @@ abstract final class AppColors {
   static const Color billGreen = Color(0xFF2FA65C);
   static const Color coinGold = Color(0xFFE2B93C);
   static const Color coinGoldDeep = Color(0xFFC9A227);
+
+  /// User home (finance overview) palette from product mock.
+  static const Color homeBackground = Color(0xFFF5F5F3);
+  static const Color homePrimary = Color(0xFF1F4D3D);
+  static const Color homeAccent = Color(0xFF2E7D5B);
+  static const Color homeExpense = Color(0xFFE74C3C);
+  static const Color homeIncome = Color(0xFF27AE60);
+  static const Color homeSaving = Color(0xFFD4A017);
+  static const Color homeMuted = Color(0xFF8A8F8A);
+  static const Color homeNavInactive = Color(0xFF9AA09A);
 }

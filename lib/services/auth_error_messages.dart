@@ -1,6 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 
-import 'app_i18n.dart';
+import './app_i18n.dart';
 
 String authErrorMessage(FirebaseAuthException e) {
   switch (e.code) {
