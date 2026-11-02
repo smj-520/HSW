@@ -8,7 +8,7 @@ import '../widgets/motion_widgets.dart';
 import '../widgets/hostel_brand.dart';
 import '../widgets/responsive_layout.dart';
 
-/// About screen opened from Settings. Same route, new layout.
+/// About screen opened from Settings. Same route, new layout..
 class AboutApplicationPage extends StatefulWidget {
   const AboutApplicationPage({super.key, required this.isAdmin});
 
