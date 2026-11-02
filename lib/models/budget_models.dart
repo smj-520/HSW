@@ -37,21 +37,19 @@ class BudgetCategory {
   const BudgetCategory({
     required this.id,
     required this.name,
-    required this.icon,
   });
 
   final String id;
   final String name;
-  final IconData icon;
 }
 
 // The five categories from the screenshot.
 const List<BudgetCategory> budgetCategories = [
-  BudgetCategory(id: 'food', name: 'Food', icon: Icons.fastfood_outlined),
-  BudgetCategory(id: 'shopping', name: 'Shopping', icon: Icons.shopping_bag_outlined),
-  BudgetCategory(id: 'home', name: 'Home', icon: Icons.home_outlined),
-  BudgetCategory(id: 'wifi', name: 'wifi', icon: Icons.wifi),
-  BudgetCategory(id: 'others', name: 'Others', icon: Icons.apps_outlined),
+  BudgetCategory(id: 'food', name: 'Food'),
+  BudgetCategory(id: 'shopping', name: 'Shopping'),
+  BudgetCategory(id: 'home', name: 'Home'),
+  BudgetCategory(id: 'wifi', name: 'wifi'),
+  BudgetCategory(id: 'others', name: 'Others'),
 ];
 
 // Finds a category by its id. Returns null if not found.

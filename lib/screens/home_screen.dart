@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import '../models/home_finance_data.dart';
 import '../services/app_i18n.dart';
 import '../theme/app_colors.dart';
+import '../widgets/expense_wheel.dart';
 import '../widgets/home_widgets.dart';
 import '../widgets/responsive_layout.dart';
 
@@ -18,10 +19,11 @@ class HomeScreen extends StatelessWidget {
     this.onAddExpense,
     this.onAddIncome,
     this.onAddSaving,
-    this.onViewAllOverview,
     this.onViewAllBills,
     this.onAddBill,
     this.onOpenBudget,
+    this.onWheelAddExpense,
+    this.onWheelUndoExpense,
   });
 
   final String firstName;
@@ -31,10 +33,16 @@ class HomeScreen extends StatelessWidget {
   final VoidCallback? onAddExpense;
   final VoidCallback? onAddIncome;
   final VoidCallback? onAddSaving;
-  final VoidCallback? onViewAllOverview;
   final VoidCallback? onViewAllBills;
   final VoidCallback? onAddBill;
   final VoidCallback? onOpenBudget;
+  final Future<String> Function({
+    required String categoryId,
+    required String categoryName,
+    required int amountBaisa,
+    String note,
+  })? onWheelAddExpense;
+  final Future<void> Function(String id)? onWheelUndoExpense;
 
   @override
   Widget build(BuildContext context) {
@@ -43,7 +51,7 @@ class HomeScreen extends StatelessWidget {
         statusBarColor: Colors.transparent,
       ),
       child: ColoredBox(
-        color: AppColors.homeBackground,
+        color: Theme.of(context).scaffoldBackgroundColor,
         child: SafeArea(
           bottom: false,
           child: ResponsiveContent(
@@ -52,7 +60,7 @@ class HomeScreen extends StatelessWidget {
                   responsivePagePaddingX(MediaQuery.sizeOf(context).width),
                   8,
                   responsivePagePaddingX(MediaQuery.sizeOf(context).width),
-                  40,
+                  100,
                 ),
                 children: [
                   _HomeHeader(
@@ -68,13 +76,14 @@ class HomeScreen extends StatelessWidget {
                     onAddIncome: onAddIncome ?? () {},
                     onAddSaving: onAddSaving ?? () {},
                   ),
-                  const SizedBox(height: 24),
-                  OverviewCard(
-                    totalExpense: data.totalExpense,
-                    totalIncome: data.totalIncome,
-                    totalSaving: data.totalSaving,
-                    onViewAll: onViewAllOverview ?? () {},
-                  ),
+                  if (onWheelAddExpense != null && onWheelUndoExpense != null) ...[
+                    const SizedBox(height: 24),
+                    ExpenseWheel(
+                      transactions: data.transactions,
+                      onAddExpense: onWheelAddExpense!,
+                      onUndoExpense: onWheelUndoExpense!,
+                    ),
+                  ],
                   const SizedBox(height: 24),
                   BillsReminder(
                     bills: data.bills,
@@ -146,7 +155,7 @@ class _BudgetButton extends StatelessWidget {
               const SizedBox(width: 10),
               Text(
                 label,
-                style: const TextStyle(
+                style: TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.w800,
                   fontSize: 16,
@@ -184,10 +193,10 @@ class _HomeHeader extends StatelessWidget {
             children: [
               Text(
                 AppI18n.t(context, en: 'Hi, $firstName', ar: 'مرحباً، $firstName'),
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.w800,
-                  color: AppColors.textPrimary,
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
               ),
               const SizedBox(height: 4),
@@ -197,9 +206,9 @@ class _HomeHeader extends StatelessWidget {
                   en: "Here's your financial overview",
                   ar: 'هذه نظرة عامة على وضعك المالي',
                 ),
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 13,
-                  color: AppColors.homeMuted,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
               ),
             ],
@@ -211,9 +220,9 @@ class _HomeHeader extends StatelessWidget {
           icon: Stack(
             clipBehavior: Clip.none,
             children: [
-              const Icon(
+              Icon(
                 Icons.notifications_none_rounded,
-                color: AppColors.textPrimary,
+                color: Theme.of(context).colorScheme.onSurface,
                 size: 26,
               ),
               if (hasAlerts)

@@ -117,7 +117,7 @@ class BalanceCard extends StatelessWidget {
                 const SizedBox(height: 8),
                 Text(
                   formatOmr(totalBalance),
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: Colors.white,
                     fontSize: 28,
                     fontWeight: FontWeight.w800,
@@ -155,10 +155,10 @@ class BillsReminder extends StatelessWidget {
       children: [
         Text(
           AppI18n.t(context, en: 'Bills Reminder', ar: 'تذكير الفواتير'),
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w700,
-            color: AppColors.textPrimary,
+            color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
         const SizedBox(height: 4),
@@ -172,7 +172,7 @@ class BillsReminder extends StatelessWidget {
           width: double.infinity,
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Theme.of(context).cardColor,
             borderRadius: BorderRadius.circular(18),
             boxShadow: [
               BoxShadow(
@@ -191,9 +191,9 @@ class BillsReminder extends StatelessWidget {
                     alignment: Alignment.centerLeft,
                     child: Text(
                       AppI18n.t(context, en: 'No bills yet', ar: 'لا توجد فواتير بعد'),
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 14,
-                        color: AppColors.homeMuted,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
                     ),
                   ),
@@ -281,164 +281,24 @@ class _BillRow extends StatelessWidget {
               children: [
                 Text(
                   bill.name,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   formatBillDue(bill.dueDate, now: now),
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
-                    color: AppColors.homeMuted,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                 ),
               ],
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class HomeBottomNav extends StatelessWidget {
-  const HomeBottomNav({
-    super.key,
-    required this.currentIndex,
-    required this.onSelected,
-  });
-
-  final int currentIndex;
-  final ValueChanged<int> onSelected;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.white,
-      elevation: 12,
-      shadowColor: Colors.black.withValues(alpha: 0.12),
-      child: SafeArea(
-        top: false,
-        child: SizedBox(
-          height: 68,
-          child: Row(
-            children: [
-              _NavItem(
-                icon: Icons.home_rounded,
-                label: AppI18n.t(context, en: 'Home', ar: 'الرئيسية'),
-                selected: currentIndex == 0,
-                onTap: () => onSelected(0),
-              ),
-              _NavItem(
-                icon: Icons.swap_horiz_rounded,
-                label: AppI18n.t(context, en: 'Transactions', ar: 'المعاملات'),
-                selected: currentIndex == 1,
-                onTap: () => onSelected(1),
-              ),
-              Expanded(
-                child: GestureDetector(
-                  onTap: () => onSelected(2),
-                  behavior: HitTestBehavior.opaque,
-                  child: Column(
-                    children: [
-                      Transform.translate(
-                        offset: const Offset(0, -10),
-                        child: Container(
-                          width: 52,
-                          height: 52,
-                          decoration: BoxDecoration(
-                            color: AppColors.homeAccent,
-                            shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(
-                                color: AppColors.homeAccent.withValues(
-                                  alpha: 0.35,
-                                ),
-                                blurRadius: 10,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: const Icon(
-                            Icons.add_rounded,
-                            color: Colors.white,
-                            size: 30,
-                          ),
-                        ),
-                      ),
-                      Text(
-                        AppI18n.t(context, en: 'Add', ar: 'إضافة'),
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: currentIndex == 2
-                              ? AppColors.homeAccent
-                              : AppColors.homeNavInactive,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              _NavItem(
-                icon: Icons.bar_chart_rounded,
-                label: AppI18n.t(context, en: 'Report', ar: 'التقرير'),
-                selected: currentIndex == 3,
-                onTap: () => onSelected(3),
-              ),
-              _NavItem(
-                icon: Icons.settings_rounded,
-                label: AppI18n.t(context, en: 'Setting', ar: 'الإعدادات'),
-                selected: currentIndex == 4,
-                onTap: () => onSelected(4),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _NavItem extends StatelessWidget {
-  const _NavItem({
-    required this.icon,
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final color = selected ? AppColors.homeAccent : AppColors.homeNavInactive;
-    return Expanded(
-      child: InkWell(
-        onTap: onTap,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, color: color, size: 24),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                color: color,
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -467,10 +327,10 @@ class OverviewCard extends StatelessWidget {
             Expanded(
               child: Text(
                 AppI18n.t(context, en: 'Overview', ar: 'نظرة عامة'),
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary,
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
               ),
             ),
@@ -491,7 +351,7 @@ class OverviewCard extends StatelessWidget {
         Container(
           width: double.infinity,
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Theme.of(context).cardColor,
             borderRadius: BorderRadius.circular(18),
             boxShadow: [
               BoxShadow(
@@ -582,18 +442,18 @@ class _OverviewRow extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   subtitle,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
-                    color: AppColors.homeMuted,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                 ),
               ],
@@ -632,10 +492,10 @@ class QuickActions extends StatelessWidget {
       children: [
         Text(
           AppI18n.t(context, en: 'Quick Actions', ar: 'إجراءات سريعة'),
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w700,
-            color: AppColors.textPrimary,
+            color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
         const SizedBox(height: 12),
@@ -699,7 +559,7 @@ class _QuickActionCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -732,10 +592,10 @@ class _QuickActionCard extends StatelessWidget {
                 Text(
                   title,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
+                    color: Theme.of(context).colorScheme.onSurface,
                     height: 1.2,
                   ),
                 ),
@@ -743,10 +603,10 @@ class _QuickActionCard extends StatelessWidget {
                 Text(
                   subtitle,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.w500,
-                    color: AppColors.homeMuted,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                     height: 1.2,
                   ),
                 ),

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../services/app_i18n.dart';
 import '../models/budget_models.dart';
+import 'category_icon.dart';
 
 const _ink = Color(0xFF1F4D3D);
 const _muted = Color(0xFF8A8F8A);
@@ -41,7 +42,6 @@ class BudgetCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cat = findBudgetCategory(budget.category);
     final used = budget.usedAmountBaisa;
     final limit = budget.amountBaisa;
     final percent = limit <= 0 ? 0.0 : used / limit;
@@ -58,7 +58,7 @@ class BudgetCard extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Material(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(20),
         child: InkWell(
           onTap: onTap,
@@ -77,14 +77,10 @@ class BudgetCard extends StatelessWidget {
             ),
             child: Row(
               children: [
-                Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    color: accent.withValues(alpha: 0.16),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Icon(cat?.icon ?? Icons.apps_outlined, size: 26, color: accent),
+                CategoryIcon(
+                  budget.category ?? 'others',
+                  accent,
+                  48,
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -93,10 +89,10 @@ class BudgetCard extends StatelessWidget {
                     children: [
                       Text(
                         localizedBudgetCategoryName(context, budget.category),
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w800,
-                          color: _ink,
+                          color: Theme.of(context).colorScheme.onSurface,
                         ),
                       ),
                       const SizedBox(height: 4),
@@ -159,7 +155,7 @@ class TotalBudgetCard extends StatelessWidget {
     final remainShown = remaining < 0 ? 0 : remaining;
 
     return Material(
-      color: Colors.white,
+      color: Theme.of(context).cardColor,
       borderRadius: BorderRadius.circular(22),
       elevation: 0,
       child: InkWell(
@@ -383,16 +379,17 @@ class CategoryDropdown extends StatelessWidget {
   Widget build(BuildContext context) {
     final fontSize = large ? 18.0 : 16.0;
     return InputDecorator(
-      decoration: _fieldDecoration(large: large),
+      decoration: _fieldDecoration(context, large: large),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
           // Empty string means "None" (Flutter dropdowns cannot use a null value).
           value: selectedId ?? (includeNone ? '' : null),
           isExpanded: true,
           icon: Icon(Icons.expand_more_rounded, size: large ? 28 : 24),
+          dropdownColor: Theme.of(context).cardColor,
           style: TextStyle(
             fontSize: fontSize,
-            color: const Color(0xFF1F4D3D),
+            color: Theme.of(context).colorScheme.onSurface,
             fontWeight: FontWeight.w600,
           ),
           hint: Text(
@@ -415,7 +412,11 @@ class CategoryDropdown extends StatelessWidget {
                 value: item.id,
                 child: Row(
                   children: [
-                    Icon(item.icon, color: Colors.black, size: large ? 26 : 24),
+                    CategoryIcon(
+                      item.id,
+                      categoryTileColor(item.id),
+                      large ? 28.0 : 24.0,
+                    ),
                     const SizedBox(width: 12),
                     Text(
                       localizedBudgetCategoryName(context, item.id),
@@ -436,22 +437,22 @@ class CategoryDropdown extends StatelessWidget {
 }
 
 // Same white rounded look as the other form boxes.
-InputDecoration _fieldDecoration({required bool large}) {
+InputDecoration _fieldDecoration(BuildContext context, {required bool large}) {
   const radius = BorderRadius.all(Radius.circular(18));
-  const line = Color(0xFFE6E3DC);
+  final line = Theme.of(context).colorScheme.outline.withValues(alpha: 0.55);
   return InputDecoration(
     filled: true,
-    fillColor: Colors.white,
-    hintStyle: const TextStyle(color: Color(0xFF8A8F8A)),
+    fillColor: Theme.of(context).cardColor,
+    hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
     contentPadding: EdgeInsets.symmetric(
       horizontal: large ? 20 : 16,
       vertical: large ? 18 : 4,
     ),
-    border: const OutlineInputBorder(
+    border: OutlineInputBorder(
       borderRadius: radius,
       borderSide: BorderSide(color: line),
     ),
-    enabledBorder: const OutlineInputBorder(
+    enabledBorder: OutlineInputBorder(
       borderRadius: radius,
       borderSide: BorderSide(color: line),
     ),

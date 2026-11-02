@@ -10,11 +10,10 @@ import '../models/home_finance_data.dart';
 import '../navigation/app_transitions.dart';
 import '../services/finance_repository.dart';
 import '../services/user_profile_repository.dart';
-import '../theme/app_colors.dart';
 import '../utils/formatters.dart';
 import './report_screen.dart';
 import './transaction_screen.dart';
-import '../widgets/home_widgets.dart';
+import '../widgets/app_bottom_nav.dart';
 import './add_transaction_screen.dart' hide AddBillScreen, ReportScreen;
 import './add_bill_screen.dart';
 import './home_screen.dart';
@@ -117,7 +116,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
   Future<void> _openAddPicker() async {
     await showModalBottomSheet<void>(
       context: context,
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).cardColor,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -159,11 +158,31 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
         onAddSaving: () => _openAdd(TransactionKind.saving),
         onAddBill: _openAddBill,
         onOpenBudget: _openBudget,
-        onViewAllOverview: () => setState(() => _index = 1),
         onViewAllBills: () {
           Navigator.of(context).push(
             MaterialPageRoute(builder: (context) => const BillsScreen()),
           );
+        },
+        onWheelAddExpense: ({
+          required String categoryId,
+          required String categoryName,
+          required int amountBaisa,
+          String note = '',
+        }) async {
+          final user = _sessionUser;
+          if (user == null) return '';
+          return _financeRepo.addTransaction(
+            uid: user.uid,
+            kind: TransactionKind.expense,
+            amountBaisa: amountBaisa,
+            note: note.isEmpty ? categoryName : note,
+            category: categoryId,
+          );
+        },
+        onWheelUndoExpense: (id) async {
+          final user = _sessionUser;
+          if (user == null || id.isEmpty) return;
+          await _financeRepo.deleteTransaction(uid: user.uid, id: id);
         },
       ),
       const TransactionScreen(),
@@ -173,7 +192,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
     ];
 
     return Scaffold(
-      backgroundColor: AppColors.homeBackground,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: AnimatedSwitcher(
         duration: const Duration(milliseconds: 260),
         switchInCurve: Curves.easeOutCubic,
@@ -183,7 +202,8 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
           child: pages[_index],
         ),
       ),
-      bottomNavigationBar: HomeBottomNav(
+      bottomNavigationBar: AppBottomNav.student(
+        context: context,
         currentIndex: _index,
         onSelected: _onNavSelected,
       ),

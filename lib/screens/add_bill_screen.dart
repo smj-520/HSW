@@ -100,7 +100,7 @@ class _AddBillScreenState extends State<AddBillScreen> {
   InputDecoration fieldLook({String? hint, String? counter}) {
     return InputDecoration(
       filled: true,
-      fillColor: Colors.white,
+      fillColor: Theme.of(context).cardColor,
       hintText: hint,
       counterText: counter,
       hintStyle: const TextStyle(color: Colors.grey),
@@ -123,9 +123,9 @@ class _AddBillScreenState extends State<AddBillScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF9F6F0),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: const Color(0xFFF9F6F0),
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         centerTitle: true,
         title: Text(AppI18n.t(context, en: 'Add Bill', ar: 'إضافة فاتورة')),
       ),
@@ -169,7 +169,9 @@ class _AddBillScreenState extends State<AddBillScreen> {
                       ? AppI18n.t(context, en: 'Select due date', ar: 'اختر تاريخ الاستحقاق')
                       : DateFormat('d MMM yyyy').format(selectedDueDate!),
                   style: TextStyle(
-                    color: selectedDueDate == null ? Colors.grey : Colors.black,
+                    color: selectedDueDate == null
+                        ? Theme.of(context).colorScheme.onSurfaceVariant
+                        : Theme.of(context).colorScheme.onSurface,
                     fontSize: 16,
                   ),
                 ),

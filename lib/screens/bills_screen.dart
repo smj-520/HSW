@@ -135,9 +135,9 @@ class _BillsScreenState extends State<BillsScreen> {
     final paidBills = _billService.paidBills(filtered);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF9F6F0),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: const Color(0xFFF9F6F0),
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         centerTitle: true,
         title: Text(AppI18n.t(context, en: 'Bills', ar: 'الفواتير')),
       ),

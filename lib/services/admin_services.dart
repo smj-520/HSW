@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 
 import './user_profile_repository.dart';
+import '../constants/biller_categories.dart';
 import '../models/admin_models.dart';
 
 // This class only answers: who is logged in, and are they an admin?
@@ -109,11 +110,15 @@ class BillerService {
     required String category,
     required String accountNumber,
   }) async {
-    final error = _checkFields(name, category, accountNumber);
+    final error = validateBillerFields(
+      name: name,
+      category: category,
+      accountNumber: accountNumber,
+    );
     if (error != null) return error;
     await _billers.push().set({
       'name': name.trim(),
-      'category': category.trim(),
+      'category': resolveBillerCategoryId(category)!,
       'accountNumber': accountNumber.trim(),
     });
     return null;
@@ -126,11 +131,15 @@ class BillerService {
     required String category,
     required String accountNumber,
   }) async {
-    final error = _checkFields(name, category, accountNumber);
+    final error = validateBillerFields(
+      name: name,
+      category: category,
+      accountNumber: accountNumber,
+    );
     if (error != null) return error;
     await _billers.child(id).update({
       'name': name.trim(),
-      'category': category.trim(),
+      'category': resolveBillerCategoryId(category)!,
       'accountNumber': accountNumber.trim(),
     });
     return null;
@@ -141,13 +150,6 @@ class BillerService {
     return _billers.child(id).remove();
   }
 
-  // Returns an error text if any field is empty.
-  String? _checkFields(String name, String category, String accountNumber) {
-    if (name.trim().isEmpty) return 'Name is required';
-    if (category.trim().isEmpty) return 'Category is required';
-    if (accountNumber.trim().isEmpty) return 'Account number is required';
-    return null;
-  }
 }
 
 // Feedback lives in Firebase under "feedback". Users add it. Admins only read it.

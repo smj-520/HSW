@@ -96,6 +96,7 @@ class _SummaryScreenState extends State<SummaryScreen> {
           amountBaisa: item.amountBaisa,
           percent: item.percent,
           color: _barColors[i % _barColors.length],
+          categoryId: item.id,
         ),
       );
     }
@@ -106,7 +107,7 @@ class _SummaryScreenState extends State<SummaryScreen> {
   Widget build(BuildContext context) {
     final current = report;
     return Material(
-      color: FinanceSurface.pageBg,
+      color: FinanceSurface.pageBg(context),
       child: SafeArea(
         child: isLoading
             ? const Center(child: CircularProgressIndicator(color: Color(0xFF27AE60)))
@@ -137,17 +138,17 @@ class _SummaryScreenState extends State<SummaryScreen> {
                           const SizedBox(height: 24),
                           Text(
                             AppI18n.t(context, en: 'Expenses by category', ar: 'المصروفات حسب الفئة'),
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontWeight: FontWeight.w800,
                               fontSize: 16,
-                              color: FinanceSurface.ink,
+                              color: FinanceSurface.ink(context),
                             ),
                           ),
                           const SizedBox(height: 12),
                           Container(
                             width: double.infinity,
                             padding: const EdgeInsets.fromLTRB(16, 18, 16, 16),
-                            decoration: FinanceSurface.card(),
+                            decoration: FinanceSurface.card(context),
                             child: SummaryChart(
                               bars: current == null ? [] : barsFrom(current),
                             ),

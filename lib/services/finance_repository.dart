@@ -37,13 +37,13 @@ class FinanceRepository {
     return _parse(snapshot.value);
   }
 
-  Future<void> addTransaction({
+  Future<String> addTransaction({
     required String uid,
     required TransactionKind kind,
     required int amountBaisa,
     String note = '',
     String? category,
-  }) {
+  }) async {
     final row = <String, Object>{
       'kind': kind.name,
       'amountBaisa': amountBaisa,
@@ -55,7 +55,16 @@ class FinanceRepository {
     if (kind == TransactionKind.expense && cat != null && cat.isNotEmpty) {
       row['category'] = cat;
     }
-    return _root.child(uid).child('transactions').push().set(row);
+    final ref = _root.child(uid).child('transactions').push();
+    await ref.set(row);
+    return ref.key ?? '';
+  }
+
+  Future<void> deleteTransaction({
+    required String uid,
+    required String id,
+  }) {
+    return _root.child(uid).child('transactions').child(id).remove();
   }
 
   Future<void> addBill({

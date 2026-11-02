@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import '../services/admin_services.dart';
 import '../services/user_profile_repository.dart';
 import '../services/app_i18n.dart';
-import '../theme/app_colors.dart';
 import '../widgets/primary_action_button.dart';
 import '../widgets/responsive_layout.dart';
 
@@ -78,9 +77,9 @@ class _SendFeedbackScreenState extends State<SendFeedbackScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.homeBackground,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: AppColors.homeBackground,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         title: Text(AppI18n.t(context, en: 'Send feedback', ar: 'إرسال ملاحظة')),
       ),
       body: ResponsiveContent(

@@ -47,7 +47,7 @@ class _AboutApplicationPageState extends State<AboutApplicationPage> {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final pageBg = isDark ? scheme.surface : AppColors.homeBackground;
+    final pageBg = scheme.surface;
     final topPad = MediaQuery.paddingOf(context).top;
 
     return AnnotatedRegion<SystemUiOverlayStyle>(

@@ -31,21 +31,15 @@ class MyApp extends StatelessWidget {
       animation: AppSettingsController.instance,
       builder: (context, _) {
         final settings = AppSettingsController.instance;
+        final dark = settings.themeMode == ThemeMode.dark;
+        SystemChrome.setSystemUIOverlayStyle(
+          (dark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark)
+              .copyWith(statusBarColor: Colors.transparent),
+        );
         return MaterialApp(
           debugShowCheckedModeBanner: false,
           title: 'Hostel Student Wallet',
-          theme: buildAppTheme().copyWith(
-            pageTransitionsTheme: const PageTransitionsTheme(
-              builders: {
-                TargetPlatform.android: FadeForwardsPageTransitionsBuilder(),
-                TargetPlatform.iOS: FadeForwardsPageTransitionsBuilder(),
-                TargetPlatform.macOS: FadeForwardsPageTransitionsBuilder(),
-                TargetPlatform.linux: FadeForwardsPageTransitionsBuilder(),
-                TargetPlatform.windows: FadeForwardsPageTransitionsBuilder(),
-                TargetPlatform.fuchsia: FadeForwardsPageTransitionsBuilder(),
-              },
-            ),
-          ),
+          theme: buildAppTheme(),
           darkTheme: buildDarkAppTheme(),
           themeMode: settings.themeMode,
           locale: settings.locale,

@@ -219,8 +219,6 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(text)));
   }
 
-  static const _cream = Color(0xFFF9F6F0);
-  static const _ink = Color(0xFF1F4D3D);
   static const _muted = Color(0xFF8A8F8A);
   static const _green = Color(0xFF27AE60);
 
@@ -246,7 +244,7 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
     final hintSize = tablet ? 18.0 : 16.0;
     return InputDecoration(
       filled: true,
-      fillColor: Colors.white,
+      fillColor: Theme.of(context).cardColor,
       hintText: hint,
       helperText: helper,
       helperMaxLines: 2,
@@ -303,7 +301,7 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
               style: TextStyle(
                 fontWeight: FontWeight.w800,
                 fontSize: tablet ? 18 : 16,
-                color: _ink,
+                color: Theme.of(context).colorScheme.onSurface,
               ),
             ),
           ),
@@ -341,15 +339,15 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
     final buttonH = tablet ? 66.0 : 56.0;
 
     return Scaffold(
-      backgroundColor: _cream,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       resizeToAvoidBottomInset: true,
       appBar: AppBar(
-        backgroundColor: _cream,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
         toolbarHeight: tablet ? 64 : kToolbarHeight,
-        iconTheme: IconThemeData(color: _ink, size: tablet ? 26 : 24),
+        iconTheme: IconThemeData(color: Theme.of(context).colorScheme.onSurface, size: tablet ? 26 : 24),
         title: Text(
           isEdit
               ? AppI18n.t(context, en: 'Edit Budget', ar: 'تعديل الميزانية')
@@ -357,7 +355,7 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
           style: TextStyle(
             fontWeight: FontWeight.w800,
             fontSize: tablet ? 22 : 18,
-            color: _ink,
+            color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
       ),
@@ -378,7 +376,7 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
                 controller: _amount,
                 enabled: !isLoading,
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                style: TextStyle(fontSize: fieldFont, color: _ink, fontWeight: FontWeight.w600),
+                style: TextStyle(fontSize: fieldFont, color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.w600),
                 decoration: fieldLook(
                   tablet: tablet,
                   accent: _green,
@@ -433,7 +431,9 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
                         ? AppI18n.t(context, en: 'Select Date', ar: 'اختر التاريخ')
                         : DateFormat('yyyy-MM-dd').format(selectedDate!),
                     style: TextStyle(
-                      color: selectedDate == null ? _muted : _ink,
+                      color: selectedDate == null
+                          ? Theme.of(context).colorScheme.onSurfaceVariant
+                          : Theme.of(context).colorScheme.onSurface,
                       fontSize: fieldFont,
                       fontWeight: FontWeight.w600,
                     ),
@@ -457,7 +457,7 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
                 maxLines: tablet ? 7 : 5,
                 minLines: tablet ? 5 : 4,
                 onChanged: (_) => setState(() {}),
-                style: TextStyle(fontSize: fieldFont, color: _ink, height: 1.4),
+                style: TextStyle(fontSize: fieldFont, color: Theme.of(context).colorScheme.onSurface, height: 1.4),
                 decoration: fieldLook(
                   tablet: tablet,
                   accent: _amber,

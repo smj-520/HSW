@@ -27,7 +27,19 @@
     },
     "billers": {
       ".read": "auth != null",
-      ".write": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'"
+      ".write": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'",
+      "$billerId": {
+        ".validate": "!newData.exists() || (newData.hasChildren(['name', 'category', 'accountNumber']))",
+        "name": {
+          ".validate": "newData.isString() && newData.val().length > 0"
+        },
+        "category": {
+          ".validate": "newData.isString() && (newData.val() === 'hostel_fees' || newData.val() === 'mess_food' || newData.val() === 'laundry' || newData.val() === 'transport' || newData.val() === 'study' || newData.val() === 'mobile' || newData.val() === 'health' || newData.val() === 'personal_care' || newData.val() === 'entertainment' || newData.val() === 'gifts_family' || newData.val() === 'groceries' || newData.val() === 'emergency')"
+        },
+        "accountNumber": {
+          ".validate": "newData.isString() && newData.val().length > 0"
+        }
+      }
     },
     "payments": {
       ".read": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'",

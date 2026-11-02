@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../services/app_i18n.dart';
 import '../widgets/responsive_layout.dart';
+import '../constants/biller_categories.dart';
 import '../models/admin_models.dart';
 import '../services/admin_services.dart';
 import '../widgets/admin_widgets.dart';
@@ -145,7 +146,7 @@ class _BillerScreenState extends State<BillerScreen> {
                           style: const TextStyle(fontWeight: FontWeight.w800),
                         ),
                         subtitle: Text(
-                          '${biller.category}\n${biller.accountNumber}',
+                          '${localizedBillerCategory(context, biller.category)}\n${biller.accountNumber}',
                         ),
                         isThreeLine: true,
                         trailing: Row(

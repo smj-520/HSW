@@ -117,9 +117,9 @@ class FeedbackDetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF9F6F0),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: const Color(0xFFF9F6F0),
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         title: Text(AppI18n.t(context, en: 'Feedback', ar: 'الملاحظات')),
       ),
       body: ResponsiveContent(

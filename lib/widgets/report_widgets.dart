@@ -4,30 +4,28 @@ import 'package:intl/intl.dart';
 
 import '../services/app_i18n.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_surfaces.dart';
 import '../models/transaction_model.dart';
 import '../utils/formatters.dart';
 import '../models/report_model.dart';
+import 'category_icon.dart';
 
-/// Shared cream + card look for Summary and Report (styling only).
+/// Shared page + card look for Summary and Report (styling only).
 abstract final class FinanceSurface {
-  static const Color pageBg = Color(0xFFF9F6F0);
-  static const Color ink = Color(0xFF1F4D3D);
-  static const Color muted = Color(0xFF8A8F8A);
-  static const Color pillIdle = Color(0xFFE8E6E1);
+  static Color pageBg(BuildContext context) => AppSurfaces.page(context);
+  static Color ink(BuildContext context) => AppSurfaces.ink(context);
+  static Color muted(BuildContext context) => AppSurfaces.muted(context);
+  static Color pillIdle(BuildContext context) =>
+      Theme.of(context).colorScheme.surfaceContainerHighest;
 
-  static List<BoxShadow> get cardShadow => [
-        BoxShadow(
-          color: AppColors.homePrimary.withValues(alpha: 0.08),
-          blurRadius: 18,
-          offset: const Offset(0, 8),
-        ),
-      ];
+  static List<BoxShadow> cardShadow(BuildContext context) =>
+      AppSurfaces.cardShadow(context);
 
-  static BoxDecoration card({double radius = 22}) {
+  static BoxDecoration card(BuildContext context, {double radius = 22}) {
     return BoxDecoration(
-      color: Colors.white,
+      color: AppSurfaces.card(context),
       borderRadius: BorderRadius.circular(radius),
-      boxShadow: cardShadow,
+      boxShadow: cardShadow(context),
     );
   }
 }
@@ -49,12 +47,14 @@ class WeekMonthPills extends StatelessWidget {
     return Row(
       children: [
         _pill(
+          context: context,
           label: AppI18n.t(context, en: 'Weekly', ar: 'أسبوعي'),
           selected: showWeekly,
           onTap: onWeekly,
         ),
         const SizedBox(width: 12),
         _pill(
+          context: context,
           label: AppI18n.t(context, en: 'Monthly', ar: 'شهري'),
           selected: !showWeekly,
           onTap: onMonthly,
@@ -64,6 +64,7 @@ class WeekMonthPills extends StatelessWidget {
   }
 
   Widget _pill({
+    required BuildContext context,
     required String label,
     required bool selected,
     required VoidCallback onTap,
@@ -77,16 +78,18 @@ class WeekMonthPills extends StatelessWidget {
           duration: const Duration(milliseconds: 180),
           padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 12),
           decoration: BoxDecoration(
-            color: selected ? Colors.white : FinanceSurface.pillIdle,
+            color: selected
+                ? Theme.of(context).cardColor
+                : FinanceSurface.pillIdle(context),
             borderRadius: BorderRadius.circular(28),
-            boxShadow: selected ? FinanceSurface.cardShadow : const [],
+            boxShadow: selected ? FinanceSurface.cardShadow(context) : const [],
           ),
           child: Text(
             label,
             style: TextStyle(
               fontWeight: FontWeight.w800,
               fontSize: 16,
-              color: selected ? AppColors.homeIncome : FinanceSurface.muted,
+              color: selected ? AppColors.homeIncome : FinanceSurface.muted(context),
             ),
           ),
         ),
@@ -128,7 +131,7 @@ class FinancePrimaryButton extends StatelessWidget {
         ),
         child: Text(
           label,
-          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+          style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
         ),
       ),
     );
@@ -158,10 +161,10 @@ class FinancePageTitle extends StatelessWidget {
     return Text(
       text,
       textAlign: TextAlign.center,
-      style: const TextStyle(
+      style: TextStyle(
         fontSize: 22,
         fontWeight: FontWeight.w800,
-        color: FinanceSurface.ink,
+        color: FinanceSurface.ink(context),
       ),
     );
   }
@@ -187,29 +190,29 @@ class PeriodSwitcher extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 14, 20, 8),
       child: Container(
-        decoration: FinanceSurface.card(radius: 18),
+        decoration: FinanceSurface.card(context, radius: 18),
         child: Row(
           children: [
             IconButton(
               onPressed: onPrevious,
               icon: const Icon(Icons.chevron_left_rounded),
-              color: FinanceSurface.ink,
+              color: FinanceSurface.ink(context),
             ),
             Expanded(
               child: Text(
                 label,
                 textAlign: TextAlign.center,
-                style: const TextStyle(
+                style: TextStyle(
                   fontWeight: FontWeight.w700,
                   fontSize: 15,
-                  color: FinanceSurface.ink,
+                  color: FinanceSurface.ink(context),
                 ),
               ),
             ),
             IconButton(
               onPressed: canGoNext ? onNext : null,
               icon: const Icon(Icons.chevron_right_rounded),
-              color: FinanceSurface.ink,
+              color: FinanceSurface.ink(context),
             ),
           ],
         ),
@@ -274,8 +277,8 @@ class CategoryChart extends StatelessWidget {
               borderData: FlBorderData(
                 show: true,
                 border: Border(
-                  left: BorderSide(width: 2.2, color: FinanceSurface.ink.withValues(alpha: 0.85)),
-                  bottom: BorderSide(width: 2.2, color: FinanceSurface.ink.withValues(alpha: 0.85)),
+                  left: BorderSide(width: 2.2, color: FinanceSurface.ink(context).withValues(alpha: 0.85)),
+                  bottom: BorderSide(width: 2.2, color: FinanceSurface.ink(context).withValues(alpha: 0.85)),
                 ),
               ),
               titlesData: const FlTitlesData(
@@ -311,29 +314,28 @@ class CategoryChart extends StatelessWidget {
                   padding: const EdgeInsets.only(bottom: 10),
                   child: Row(
                     children: [
-                      Container(
-                        width: 8,
-                        height: 8,
-                        margin: const EdgeInsetsDirectional.only(end: 8),
-                        decoration: BoxDecoration(
-                          color: _barColors[i % _barColors.length],
-                          borderRadius: BorderRadius.circular(2),
+                      Padding(
+                        padding: const EdgeInsetsDirectional.only(end: 8),
+                        child: CategoryIcon(
+                          categoryTotals[i].id,
+                          categoryTileColor(categoryTotals[i].id),
+                          22,
                         ),
                       ),
                       Expanded(
                         child: Text(
                           categoryTotals[i].name,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontWeight: FontWeight.w700,
-                            color: FinanceSurface.ink,
+                            color: FinanceSurface.ink(context),
                           ),
                         ),
                       ),
                       Text(
                         '${(categoryTotals[i].percent * 100).round()}%',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontWeight: FontWeight.w700,
-                          color: FinanceSurface.ink,
+                          color: FinanceSurface.ink(context),
                         ),
                       ),
                     ],
@@ -358,25 +360,25 @@ class ReportTransactionRow extends StatelessWidget {
     final Color amountColor;
     final OmrSign sign;
     final String typeLabel;
-    final IconData icon;
+    final IconData? typeIcon;
     final Color iconBg;
     if (transaction.isIncome) {
       amountColor = const Color(0xFF27AE60);
       sign = OmrSign.plus;
       typeLabel = 'Income';
-      icon = Icons.south_west_rounded;
+      typeIcon = Icons.south_west_rounded;
       iconBg = const Color(0xFFE6F6EC);
     } else if (transaction.isSaving) {
       amountColor = const Color(0xFFD4A017);
       sign = OmrSign.plus;
       typeLabel = 'Saving';
-      icon = Icons.savings_outlined;
+      typeIcon = Icons.savings_outlined;
       iconBg = const Color(0xFFFFF4D6);
     } else {
       amountColor = const Color(0xFFE74C3C);
       sign = OmrSign.minus;
       typeLabel = 'Expense';
-      icon = Icons.north_east_rounded;
+      typeIcon = null;
       iconBg = const Color(0xFFFDECEA);
     }
 
@@ -384,22 +386,30 @@ class ReportTransactionRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 10),
       child: Row(
         children: [
-          Container(
-            width: 42,
-            height: 42,
-            decoration: BoxDecoration(
-              color: iconBg,
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: Icon(icon, color: amountColor, size: 20),
-          ),
+          typeIcon == null
+              ? CategoryIcon(
+                  (transaction.category == null || transaction.category!.isEmpty)
+                      ? 'others'
+                      : transaction.category!,
+                  categoryTileColor(transaction.category),
+                  42,
+                )
+              : Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    color: iconBg,
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Icon(typeIcon, color: amountColor, size: 20),
+                ),
           const SizedBox(width: 10),
           SizedBox(
             width: 64,
             child: Text(
               DateFormat('d MMM').format(transaction.date.toLocal()),
-              style: const TextStyle(
-                color: FinanceSurface.muted,
+              style: TextStyle(
+                color: FinanceSurface.muted(context),
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
               ),
@@ -411,14 +421,14 @@ class ReportTransactionRow extends StatelessWidget {
               children: [
                 Text(
                   transaction.title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontWeight: FontWeight.w700,
-                    color: FinanceSurface.ink,
+                    color: FinanceSurface.ink(context),
                   ),
                 ),
                 Text(
                   typeLabel,
-                  style: const TextStyle(color: FinanceSurface.muted, fontSize: 12),
+                  style: TextStyle(color: FinanceSurface.muted(context), fontSize: 12),
                 ),
               ],
             ),

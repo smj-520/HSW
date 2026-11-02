@@ -135,9 +135,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.homeBackground,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: AppColors.homeBackground,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         title: Text(widget.kind.addTitle),
       ),
       body: ResponsiveContent(
@@ -202,7 +202,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
           ),
           if (_error != null) ...[
             const SizedBox(height: 12),
-            Text(_error!, style: const TextStyle(color: AppColors.homeExpense)),
+            Text(_error!, style: TextStyle(color: AppColors.homeExpense)),
           ],
           const SizedBox(height: 24),
           PrimaryActionButton(
@@ -310,9 +310,9 @@ class _AddBillScreenState extends State<AddBillScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.homeBackground,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: AppColors.homeBackground,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         title: const Text('Add bill'),
       ),
       body: ResponsiveContent(
@@ -357,7 +357,7 @@ class _AddBillScreenState extends State<AddBillScreen> {
           ),
           if (_error != null) ...[
             const SizedBox(height: 12),
-            Text(_error!, style: const TextStyle(color: AppColors.homeExpense)),
+            Text(_error!, style: TextStyle(color: AppColors.homeExpense)),
           ],
           const SizedBox(height: 24),
           PrimaryActionButton(
@@ -433,30 +433,30 @@ class TransactionsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ColoredBox(
-      color: AppColors.homeBackground,
+      color: Theme.of(context).scaffoldBackgroundColor,
       child: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            const Text(
+            Text(
               'Transactions',
               style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.w800,
-                color: AppColors.textPrimary,
+                color: Theme.of(context).colorScheme.onSurface,
               ),
             ),
             const SizedBox(height: 16),
             if (data.transactions.isEmpty)
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 24),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 24),
                 child: Text(
                   'No transactions yet',
-                  style: TextStyle(color: AppColors.homeMuted, fontSize: 15),
+                  style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 15),
                 ),
               )
             else ...[
-              for (final tx in data.transactions) _txTile(tx),
+              for (final tx in data.transactions) _txTile(context, tx),
             ],
           ],
         ),
@@ -464,7 +464,7 @@ class TransactionsScreen extends StatelessWidget {
     );
   }
 
-  Widget _txTile(FinanceTransaction tx) {
+  Widget _txTile(BuildContext context, FinanceTransaction tx) {
     final Color color;
     final OmrSign sign;
     final String title;
@@ -491,7 +491,7 @@ class TransactionsScreen extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
@@ -502,14 +502,14 @@ class TransactionsScreen extends StatelessWidget {
               children: [
                 Text(
                   subtitle,
-                  style: const TextStyle(fontWeight: FontWeight.w600),
+                  style: TextStyle(fontWeight: FontWeight.w600),
                 ),
                 if (categoryName != null && note.isNotEmpty) ...[
                   const SizedBox(height: 4),
                   Text(
                     categoryName,
-                    style: const TextStyle(
-                      color: AppColors.homeMuted,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                       fontSize: 13,
                     ),
                   ),
@@ -535,7 +535,7 @@ class ReportScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ColoredBox(
-      color: AppColors.homeBackground,
+      color: Theme.of(context).scaffoldBackgroundColor,
       child: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -580,9 +580,9 @@ class BillsListScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.homeBackground,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: AppColors.homeBackground,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         title: const Text('Bills Reminder'),
         actions: [
           if (onAddBill != null)
@@ -594,10 +594,10 @@ class BillsListScreen extends StatelessWidget {
         ],
       ),
       body: bills.isEmpty
-          ? const Center(
+          ? Center(
               child: Text(
                 'No bills yet',
-                style: TextStyle(color: AppColors.homeMuted, fontSize: 15),
+                style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 15),
               ),
             )
           : ListView.separated(
@@ -609,7 +609,7 @@ class BillsListScreen extends StatelessWidget {
                 return Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: Theme.of(context).cardColor,
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Column(
@@ -617,7 +617,7 @@ class BillsListScreen extends StatelessWidget {
                     children: [
                       Text(
                         bill.name,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontWeight: FontWeight.w700,
                           fontSize: 16,
                         ),
@@ -642,16 +642,16 @@ class NotificationsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.homeBackground,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: AppColors.homeBackground,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         title: const Text('Notifications'),
       ),
       body: bills.isEmpty
-          ? const Center(
+          ? Center(
               child: Text(
                 'No bills yet',
-                style: TextStyle(color: AppColors.homeMuted),
+                style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
               ),
             )
           : ListView(

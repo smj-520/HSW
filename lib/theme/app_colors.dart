@@ -35,5 +35,4 @@ abstract final class AppColors {
   static const Color homeIncome = Color(0xFF27AE60);
   static const Color homeSaving = Color(0xFFD4A017);
   static const Color homeMuted = Color(0xFF8A8F8A);
-  static const Color homeNavInactive = Color(0xFF9AA09A);
 }

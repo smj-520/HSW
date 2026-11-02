@@ -143,7 +143,7 @@ class _ReportScreenState extends State<ReportScreen> {
   Widget build(BuildContext context) {
     final current = report;
     return Material(
-      color: FinanceSurface.pageBg,
+      color: FinanceSurface.pageBg(context),
       child: SafeArea(
         child: ResponsiveContent(
             child: Column(
@@ -232,26 +232,26 @@ class _ReportScreenState extends State<ReportScreen> {
         const SizedBox(height: 20),
         Text(
           AppI18n.t(context, en: 'Expenses by category', ar: 'المصروفات حسب الفئة'),
-          style: const TextStyle(
+          style: TextStyle(
             fontWeight: FontWeight.w800,
             fontSize: 16,
-            color: FinanceSurface.ink,
+            color: FinanceSurface.ink(context),
           ),
         ),
         const SizedBox(height: 8),
         Container(
           width: double.infinity,
           padding: const EdgeInsets.fromLTRB(16, 18, 16, 16),
-          decoration: FinanceSurface.card(),
+          decoration: FinanceSurface.card(context),
           child: CategoryChart(categoryTotals: report.categoryTotals),
         ),
         const SizedBox(height: 20),
         Text(
           AppI18n.t(context, en: 'Transactions', ar: 'المعاملات'),
-          style: const TextStyle(
+          style: TextStyle(
             fontWeight: FontWeight.w800,
             fontSize: 16,
-            color: FinanceSurface.ink,
+            color: FinanceSurface.ink(context),
           ),
         ),
         const SizedBox(height: 8),
@@ -260,14 +260,14 @@ class _ReportScreenState extends State<ReportScreen> {
             padding: const EdgeInsets.symmetric(vertical: 16),
             child: Text(
               AppI18n.t(context, en: 'No data for this period yet', ar: 'لا توجد بيانات لهذه الفترة بعد'),
-              style: const TextStyle(color: Colors.grey),
+              style: TextStyle(color: Colors.grey),
             ),
           )
         else
           Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-            decoration: FinanceSurface.card(radius: 20),
+            decoration: FinanceSurface.card(context, radius: 20),
             child: Column(
               children: [
                 for (var i = 0; i < report.transactions.length; i++) ...[
@@ -285,14 +285,14 @@ class _ReportScreenState extends State<ReportScreen> {
   Widget _miniCard(String title, String value, Color valueColor) {
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 18),
-      decoration: FinanceSurface.card(radius: 20),
+      decoration: FinanceSurface.card(context, radius: 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             title,
-            style: const TextStyle(
-              color: FinanceSurface.muted,
+            style: TextStyle(
+              color: FinanceSurface.muted(context),
               fontSize: 13,
               fontWeight: FontWeight.w600,
             ),

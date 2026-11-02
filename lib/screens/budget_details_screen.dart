@@ -7,6 +7,7 @@ import '../services/app_i18n.dart';
 import '../widgets/responsive_layout.dart';
 import '../models/budget_models.dart';
 import '../services/budget_service.dart';
+import '../widgets/category_icon.dart';
 import './add_budget_screen.dart';
 
 // Read-only page: limit, used, remaining, date, note, plus Edit and Delete.
@@ -139,9 +140,9 @@ class _BudgetDetailsScreenState extends State<BudgetDetailsScreen> {
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF9F6F0),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: const Color(0xFFF9F6F0),
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         centerTitle: true,
         title: Text(AppI18n.t(context, en: 'Budget Details', ar: 'تفاصيل الميزانية')),
       ),
@@ -154,7 +155,11 @@ class _BudgetDetailsScreenState extends State<BudgetDetailsScreen> {
                 children: [
                   Row(
                     children: [
-                      Icon(cat?.icon ?? Icons.apps_outlined, size: 40),
+                      CategoryIcon(
+                        cat?.id ?? 'others',
+                        categoryTileColor(cat?.id ?? 'others'),
+                        48,
+                      ),
                       const SizedBox(width: 12),
                       Text(
                         cat == null

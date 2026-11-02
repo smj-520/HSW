@@ -6,6 +6,7 @@ import './report_widgets.dart';
 import '../services/app_i18n.dart';
 import '../utils/formatters.dart';
 import '../models/transaction_model.dart';
+import 'category_icon.dart';
 
 // One row: day, title, type, and the amount in the right color.
 class TransactionRow extends StatelessWidget {
@@ -20,25 +21,25 @@ class TransactionRow extends StatelessWidget {
     final Color accent;
     final OmrSign sign;
     final String typeLabel;
-    final IconData icon;
+    final IconData? typeIcon;
     if (transaction.isIncome) {
       amountColor = const Color(0xFF27AE60);
       accent = const Color(0xFF27AE60);
       sign = OmrSign.plus;
       typeLabel = AppI18n.t(context, en: 'Income', ar: 'دخل');
-      icon = Icons.south_west_rounded;
+      typeIcon = Icons.south_west_rounded;
     } else if (transaction.isSaving) {
       amountColor = const Color(0xFFD4A017);
       accent = const Color(0xFFD4A017);
       sign = OmrSign.plus;
       typeLabel = AppI18n.t(context, en: 'Saving', ar: 'ادخار');
-      icon = Icons.savings_outlined;
+      typeIcon = Icons.savings_outlined;
     } else {
       amountColor = const Color(0xFFE74C3C);
       accent = const Color(0xFFE74C3C);
       sign = OmrSign.minus;
       typeLabel = AppI18n.t(context, en: 'Expense', ar: 'مصروف');
-      icon = Icons.north_east_rounded;
+      typeIcon = null;
     }
 
     return Padding(
@@ -54,15 +55,23 @@ class TransactionRow extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 10),
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: accent.withValues(alpha: 0.14),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(icon, color: accent, size: 20),
-          ),
+          typeIcon == null
+              ? CategoryIcon(
+                  (transaction.category == null || transaction.category!.isEmpty)
+                      ? 'others'
+                      : transaction.category!,
+                  categoryTileColor(transaction.category),
+                  40,
+                )
+              : Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: accent.withValues(alpha: 0.14),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(typeIcon, color: accent, size: 20),
+                ),
           const SizedBox(width: 10),
           SizedBox(
             width: 52,
@@ -71,7 +80,7 @@ class TransactionRow extends StatelessWidget {
                 Text(
                   DateFormat('d MMM').format(date),
                   textAlign: TextAlign.center,
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: Colors.grey,
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
@@ -97,7 +106,7 @@ class TransactionRow extends StatelessWidget {
               children: [
                 Text(
                   transaction.title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontWeight: FontWeight.w800,
                     fontSize: 15,
                     color: Color(0xFF1F4D3D),
@@ -106,7 +115,7 @@ class TransactionRow extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   typeLabel,
-                  style: const TextStyle(color: Colors.grey, fontSize: 12),
+                  style: TextStyle(color: Colors.grey, fontSize: 12),
                 ),
               ],
             ),
@@ -128,12 +137,14 @@ class CategoryBar {
     required this.amountBaisa,
     required this.percent,
     required this.color,
+    this.categoryId,
   });
 
   final String name;
   final int amountBaisa;
   final double percent;
   final Color color;
+  final String? categoryId;
 }
 
 // Bar chart of expenses by category, plus the top percentages.
@@ -171,8 +182,8 @@ class SummaryChart extends StatelessWidget {
               borderData: FlBorderData(
                 show: true,
                 border: Border(
-                  left: BorderSide(width: 2.2, color: FinanceSurface.ink.withValues(alpha: 0.85)),
-                  bottom: BorderSide(width: 2.2, color: FinanceSurface.ink.withValues(alpha: 0.85)),
+                  left: BorderSide(width: 2.2, color: FinanceSurface.ink(context).withValues(alpha: 0.85)),
+                  bottom: BorderSide(width: 2.2, color: FinanceSurface.ink(context).withValues(alpha: 0.85)),
                 ),
               ),
               titlesData: const FlTitlesData(
@@ -208,29 +219,28 @@ class SummaryChart extends StatelessWidget {
                   padding: const EdgeInsets.only(bottom: 10),
                   child: Row(
                     children: [
-                      Container(
-                        width: 8,
-                        height: 8,
-                        margin: const EdgeInsetsDirectional.only(end: 8),
-                        decoration: BoxDecoration(
-                          color: bar.color,
-                          borderRadius: BorderRadius.circular(2),
+                      Padding(
+                        padding: const EdgeInsetsDirectional.only(end: 8),
+                        child: CategoryIcon(
+                          bar.categoryId ?? 'others',
+                          bar.color,
+                          22,
                         ),
                       ),
                       Expanded(
                         child: Text(
                           bar.name,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontWeight: FontWeight.w700,
-                            color: FinanceSurface.ink,
+                            color: FinanceSurface.ink(context),
                           ),
                         ),
                       ),
                       Text(
                         '${(bar.percent * 100).round()}%',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontWeight: FontWeight.w700,
-                          color: FinanceSurface.ink,
+                          color: FinanceSurface.ink(context),
                         ),
                       ),
                     ],
@@ -262,16 +272,16 @@ class IncomeExpenseCard extends StatelessWidget {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
-      decoration: FinanceSurface.card(),
+      decoration: FinanceSurface.card(context),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             AppI18n.t(context, en: 'Income vs Expenses', ar: 'الدخل مقابل المصروفات'),
-            style: const TextStyle(
+            style: TextStyle(
               fontWeight: FontWeight.w800,
               fontSize: 16,
-              color: FinanceSurface.ink,
+              color: FinanceSurface.ink(context),
             ),
           ),
           const SizedBox(height: 16),
@@ -283,15 +293,15 @@ class IncomeExpenseCard extends StatelessWidget {
                   children: [
                     Text(
                       AppI18n.t(context, en: 'Income', ar: 'الدخل'),
-                      style: const TextStyle(
-                        color: FinanceSurface.muted,
+                      style: TextStyle(
+                        color: FinanceSurface.muted(context),
                         fontWeight: FontWeight.w600,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       formatOmr(incomeBaisa, sign: OmrSign.plus),
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: Color(0xFF27AE60),
                         fontWeight: FontWeight.w800,
                         fontSize: 16,
@@ -306,15 +316,15 @@ class IncomeExpenseCard extends StatelessWidget {
                   children: [
                     Text(
                       AppI18n.t(context, en: 'Expenses', ar: 'المصروفات'),
-                      style: const TextStyle(
-                        color: FinanceSurface.muted,
+                      style: TextStyle(
+                        color: FinanceSurface.muted(context),
                         fontWeight: FontWeight.w600,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       formatOmr(expenseBaisa, sign: OmrSign.minus),
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: Color(0xFFE74C3C),
                         fontWeight: FontWeight.w800,
                         fontSize: 16,

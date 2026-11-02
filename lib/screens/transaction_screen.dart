@@ -117,7 +117,7 @@ class _TransactionScreenState extends State<TransactionScreen>
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: const Color(0xFFF9F6F0),
+      color: Theme.of(context).scaffoldBackgroundColor,
       child: SafeArea(
         child: ResponsiveContent(
         child: Column(
@@ -212,7 +212,7 @@ class _TransactionScreenState extends State<TransactionScreen>
             width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: Theme.of(context).cardColor,
               borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
