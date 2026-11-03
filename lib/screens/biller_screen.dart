@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-
 import '../services/app_i18n.dart';
 import '../widgets/responsive_layout.dart';
 import '../constants/biller_categories.dart';
