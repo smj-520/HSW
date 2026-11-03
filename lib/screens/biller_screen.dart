@@ -7,7 +7,7 @@ import '../services/admin_services.dart';
 import '../widgets/admin_widgets.dart';
 import './biller_form_screen.dart';
 
-// Admin page: list billers, then add, edit, or delete them.
+// Admin page: list billers, then add, edit, or delete them..
 class BillerScreen extends StatefulWidget {
   const BillerScreen({super.key});
 
