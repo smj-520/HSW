@@ -2,7 +2,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-
 import '../services/app_i18n.dart';
 import '../services/app_settings_controller.dart';
 import '../models/transaction_model.dart';
