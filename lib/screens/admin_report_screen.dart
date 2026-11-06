@@ -9,7 +9,6 @@ import '../services/admin_services.dart';
 import '../widgets/admin_widgets.dart';
 
 
-// Admin report: filter billers and dates, then show numbers, a pie chart, and a list.
 class AdminReportScreen extends StatefulWidget {
   const AdminReportScreen({super.key});
 
