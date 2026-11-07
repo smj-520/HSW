@@ -53,7 +53,6 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     super.dispose();
   }
 
-  // Loads billers so an expense can be linked to one (this feeds the admin report).
   Future<void> loadBillers() async {
     try {
       final list = await BillerService().loadBillerList();
@@ -98,7 +97,6 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
             ? selectedBudgetCategory
             : null,
       );
-      // If this expense is for a biller, also save a payment for the admin report.
       if (widget.kind == TransactionKind.expense && selectedBillerId != null) {
         String billerName = '';
         for (final biller in billerList) {
@@ -244,7 +242,6 @@ class _AddBillScreenState extends State<AddBillScreen> {
     super.dispose();
   }
 
-  // Loads the same biller list the admin manages, so users see new names.
   Future<void> loadBillers() async {
     try {
       final list = await BillerService().loadBillerList();
@@ -253,7 +250,6 @@ class _AddBillScreenState extends State<AddBillScreen> {
     } catch (_) {}
   }
 
-  // When the user picks a biller, we copy its name into the name box.
   void pickBiller(String? id) {
     setState(() => selectedBillerId = id);
     if (id == null) return;
