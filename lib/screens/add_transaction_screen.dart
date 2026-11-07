@@ -64,6 +64,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     }
     if (widget.existingNote != null) {
       _note.text = widget.existingNote!;
+      
     }
     if (widget.kind == TransactionKind.expense) {
       _billerSub = BillerService().watchBillerList().listen(
