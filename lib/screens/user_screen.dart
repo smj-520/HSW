@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
-
 import '../services/app_i18n.dart';
 import '../widgets/responsive_layout.dart';
 import '../models/admin_models.dart';
 import '../services/admin_services.dart';
 import '../widgets/admin_widgets.dart';
 
-// Admin page: search users, then block or unblock them.
+
 class UserScreen extends StatefulWidget {
   const UserScreen({super.key});
 
@@ -33,7 +32,7 @@ class _UserScreenState extends State<UserScreen> {
     super.dispose();
   }
 
-  // Downloads the user list from Firebase.
+  
   Future<void> loadUsers() async {
     setState(() {
       isLoading = true;
@@ -55,7 +54,7 @@ class _UserScreenState extends State<UserScreen> {
     }
   }
 
-  // Keeps only users whose name or email contains the search text.
+  
   List<UserModel> filteredList() {
     final q = _search.text.trim().toLowerCase();
     if (q.isEmpty) return userList;
@@ -65,7 +64,7 @@ class _UserScreenState extends State<UserScreen> {
     }).toList();
   }
 
-  // Asks "Are you sure?" then blocks or unblocks this user.
+  
   Future<void> blockUser(UserModel user) async {
     final willBlock = !user.isBlocked;
     final ok = await ConfirmDialog.show(
@@ -145,7 +144,7 @@ class _UserScreenState extends State<UserScreen> {
   }
 }
 
-// One row: name, email, Active/Blocked, and a Block or Unblock button.
+
 class _UserTile extends StatelessWidget {
   const _UserTile({required this.user, required this.onBlockTap});
 
