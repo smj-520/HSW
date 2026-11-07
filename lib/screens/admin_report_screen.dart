@@ -41,7 +41,6 @@ class _AdminReportScreenState extends State<AdminReportScreen> {
     loadReport();
   }
 
-  // Downloads billers and payments from Firebase.
   Future<void> loadReport() async {
     setState(() {
       isLoading = true;
@@ -65,7 +64,6 @@ class _AdminReportScreenState extends State<AdminReportScreen> {
     }
   }
 
-  // Opens the calendar so the admin can pick a start date and an end date.
   Future<void> pickDates() async {
     final picked = await showDateRangePicker(
       context: context,
@@ -78,12 +76,10 @@ class _AdminReportScreenState extends State<AdminReportScreen> {
     }
   }
 
-  // Clears the date filter so we show every payment again.
   void clearDates() {
     setState(() => dateRange = null);
   }
 
-  // Payments that match the dropdown and the date range.
   List<PaymentModel> filteredPayments() {
     return paymentList.where((pay) {
       if (selectedBillerId != 'all' && pay.billerId != selectedBillerId) {
@@ -107,7 +103,6 @@ class _AdminReportScreenState extends State<AdminReportScreen> {
     }).toList();
   }
 
-  // Adds up payment amounts for each biller name (for the pie chart).
   Map<String, int> totalsByBiller(List<PaymentModel> rows) {
     final map = <String, int>{};
     for (final pay in rows) {
