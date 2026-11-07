@@ -8,7 +8,7 @@ import '../widgets/expense_wheel.dart';
 import '../widgets/home_widgets.dart';
 import '../widgets/responsive_layout.dart';
 
-/// Finance overview home. First name and totals come from [firstName] / [data].
+
 class HomeScreen extends StatelessWidget {
   const HomeScreen({
     super.key,
