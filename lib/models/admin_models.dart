@@ -10,6 +10,7 @@ class BillerModel {
     this.active = true,
   });
 
+  
   final String id;
   final String name;
   final String category;
