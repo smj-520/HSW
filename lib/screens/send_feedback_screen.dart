@@ -8,7 +8,7 @@ import '../services/app_i18n.dart';
 import '../widgets/primary_action_button.dart';
 import '../widgets/responsive_layout.dart';
 
-// A simple form so a normal user can send feedback to the admin.
+
 class SendFeedbackScreen extends StatefulWidget {
   const SendFeedbackScreen({super.key});
 
@@ -28,7 +28,7 @@ class _SendFeedbackScreenState extends State<SendFeedbackScreen> {
     super.dispose();
   }
 
-  // Saves the message in Firebase. We never edit it later.
+
   Future<void> sendFeedback() async {
     final text = _message.text.trim();
     if (text.isEmpty) {
