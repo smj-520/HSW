@@ -8,7 +8,6 @@ import '../widgets/responsive_layout.dart';
 import '../utils/formatters.dart';
 import '../services/bill_service.dart';
 
-// Form to add one unpaid bill. The user types every value. Nothing is pre-filled.
 class AddBillScreen extends StatefulWidget {
   const AddBillScreen({super.key});
 
@@ -38,7 +37,6 @@ class _AddBillScreenState extends State<AddBillScreen> {
     return FirebaseAuth.instance.currentUser?.uid;
   }
 
-  // Opens the calendar so the user can pick a due date.
   Future<void> pickDueDate() async {
     final picked = await showDatePicker(
       context: context,
@@ -49,7 +47,6 @@ class _AddBillScreenState extends State<AddBillScreen> {
     if (picked != null) setState(() => selectedDueDate = picked);
   }
 
-  // Checks name, amount, and due date, then saves an unpaid bill.
   Future<void> saveBill() async {
     final name = _name.text.trim();
     final amountBaisa = parseOmrToBaisa(_amount.text);
