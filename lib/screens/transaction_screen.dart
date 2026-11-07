@@ -9,7 +9,7 @@ import '../services/transaction_service.dart';
 import '../widgets/responsive_layout.dart';
 import '../widgets/transaction_widgets.dart';
 
-// Transaction tab: All / Income / Expense / Saving, grouped by month.
+
 class TransactionScreen extends StatefulWidget {
   const TransactionScreen({super.key});
 
@@ -46,7 +46,7 @@ class _TransactionScreenState extends State<TransactionScreen>
     return FirebaseAuth.instance.currentUser?.uid;
   }
 
-  // Downloads this user's transactions. Newest already first from the service.
+  
   Future<void> loadTransactions() async {
     final uid = sessionUid();
     if (uid == null) {
@@ -79,7 +79,7 @@ class _TransactionScreenState extends State<TransactionScreen>
     }
   }
 
-  // Keeps only the type for the selected tab. 0 = All.
+  
   List<TransactionModel> filteredList() {
     if (tabController.index == 0) return transactionList;
     final wanted = ['all', 'income', 'expense', 'saving'][tabController.index];
@@ -90,7 +90,7 @@ class _TransactionScreenState extends State<TransactionScreen>
     return list;
   }
 
-  // Groups rows by year-month, newest month first.
+
   List<_MonthGroup> groupByMonth(List<TransactionModel> rows) {
     final groups = <String, _MonthGroup>{};
     final order = <String>[];
