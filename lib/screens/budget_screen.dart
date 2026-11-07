@@ -10,7 +10,7 @@ import '../widgets/budget_widgets.dart';
 import './add_budget_screen.dart';
 import './budget_details_screen.dart';
 
-// The main Budget page: pie chart, category list, and Add Budget button.
+
 class BudgetScreen extends StatefulWidget {
   const BudgetScreen({super.key});
 
@@ -30,13 +30,13 @@ class _BudgetScreenState extends State<BudgetScreen> {
     loadBudgets();
   }
 
-  // The signed-in user's id, or null if nobody is logged in.
+
   String? sessionUid() {
     if (Firebase.apps.isEmpty) return null;
     return FirebaseAuth.instance.currentUser?.uid;
   }
 
-  // Downloads this user's budgets from Firebase.
+
   Future<void> loadBudgets() async {
     final uid = sessionUid();
     if (uid == null) {
@@ -66,7 +66,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
     }
   }
 
-  // Tap the pie: open overall details, or Add Budget if there is no overall yet.
+
   Future<void> openOverall() async {
     final overall = _budgetService.findOverall(budgetList);
     if (overall == null) {
@@ -76,7 +76,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
     await openDetails(overall);
   }
 
-  // Opens the read-only details page, then reloads when we come back.
+
   Future<void> openDetails(BudgetModel budget) async {
     await Navigator.of(context).push(
       MaterialPageRoute(
@@ -86,7 +86,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
     await loadBudgets();
   }
 
-  // Opens Add Budget, then reloads when we come back.
+
   Future<void> openAddBudget() async {
     await Navigator.of(context).push(
       MaterialPageRoute(builder: (context) => const AddBudgetScreen()),
@@ -94,7 +94,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
     await loadBudgets();
   }
 
-  // Opens the same form, already filled with this budget's old data.
+
   Future<void> openEditBudget(BudgetModel budget) async {
     await Navigator.of(context).push(
       MaterialPageRoute(
@@ -104,7 +104,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
     await loadBudgets();
   }
 
-  // Asks first, then deletes this budget and refreshes the pie and list.
+
   Future<void> deleteBudget(BudgetModel budget) async {
     final ok = await showDialog<bool>(
       context: context,
@@ -155,7 +155,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
     }
   }
 
-  // Only the category rows (the overall limit lives in the top card).
+
   List<BudgetModel> categoryBudgets() {
     final list = <BudgetModel>[];
     for (final budget in budgetList) {
