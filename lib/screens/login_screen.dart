@@ -111,7 +111,7 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  // Looks at the database role, then opens Admin Home or User Home.
+
   Future<void> _openHomeForSignedInUser() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
@@ -124,12 +124,12 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  // Replaces login with Admin Home. Back cannot return to login.
+
   void _openAdminHome() {
     Navigator.of(context).pushNamedAndRemoveUntil('/admin', (route) => false);
   }
 
-  // Replaces login with the normal user Home. Back cannot return to login.
+
   void _openUserHome() {
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(builder: (context) => const UserHomeScreen()),
