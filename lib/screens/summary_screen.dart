@@ -1,7 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-
 import '../models/report_model.dart';
 import '../services/report_service.dart';
 import '../widgets/report_widgets.dart';
@@ -18,7 +17,7 @@ const _barColors = [
   Color(0xFFE67E22),
 ];
 
-// Summary: same weekly/monthly math as Report, using FinanceReportService.
+
 class SummaryScreen extends StatefulWidget {
   const SummaryScreen({super.key, this.onDone});
 
