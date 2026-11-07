@@ -111,7 +111,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       );
       return;
     }
-//hashing...
+
     setState(() => _loading = true);
     try {
       final cred = await FirebaseAuth.instance.createUserWithEmailAndPassword(
