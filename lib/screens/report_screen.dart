@@ -11,7 +11,7 @@ import '../widgets/report_widgets.dart';
 import '../widgets/transaction_widgets.dart';
 import '../widgets/responsive_layout.dart';
 
-// Report tab: weekly or monthly financial report from this user's transactions.
+
 class ReportScreen extends StatefulWidget {
   const ReportScreen({super.key});
 
@@ -40,7 +40,7 @@ class _ReportScreenState extends State<ReportScreen> {
     return FirebaseAuth.instance.currentUser?.uid;
   }
 
-  // Loads weekly or monthly totals for the chosen dates.
+
   Future<void> loadReport() async {
     final uid = sessionUid();
     if (uid == null) {
@@ -118,7 +118,7 @@ class _ReportScreenState extends State<ReportScreen> {
     return monthPeriodLabel(monthAnchor);
   }
 
-  // Builds a PDF from the report on screen, or shows why it cannot.
+
   Future<void> downloadReport() async {
     final current = report;
     if (current == null || !current.hasData) {
