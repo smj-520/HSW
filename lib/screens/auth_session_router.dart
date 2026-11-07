@@ -11,7 +11,6 @@ import './login_screen.dart';
 import './splash_screen.dart';
 import './user_home_screen.dart';
 
-// After Firebase is ready: resume an existing session or show splash / login.
 class AuthSessionRouter extends StatefulWidget {
   const AuthSessionRouter({super.key});
 
@@ -43,7 +42,6 @@ class _AuthSessionRouterState extends State<AuthSessionRouter> {
       return;
     }
 
-    // Blocked people are signed out and sent to Login.
     try {
       final blocked = await UserProfileRepository().isBlocked(user.uid);
       if (blocked) {
@@ -75,14 +73,12 @@ class _AuthSessionRouterState extends State<AuthSessionRouter> {
     }
   }
 
-  // Opens Admin Home and removes this router page.
   void _openAdminHome() {
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(builder: (context) => const AdminHomeScreen()),
     );
   }
 
-  // Opens the normal user Home and removes this router page.
   void _openUserHome() {
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(builder: (context) => const UserHomeScreen()),
