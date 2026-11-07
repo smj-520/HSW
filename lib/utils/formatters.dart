@@ -1,35 +1,60 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../core/money.dart';
 import '../services/app_i18n.dart';
 
 enum OmrSign { none, plus, minus }
 
-/// Parses a user-entered OMR amount (e.g. `500` or `500.000`) to baisa.
-/// Returns null when empty or not a positive amount.
-int? parseOmrToBaisa(String? raw) {
-  if (raw == null) return null;
-  final cleaned = raw.trim().replaceAll(',', '');
-  if (cleaned.isEmpty) return null;
-  final omr = double.tryParse(cleaned);
-  if (omr == null || omr <= 0) return null;
-  return (omr * 1000).round();
-}
+int? parseOmrToBaisa(String? raw) => Money.omrToBaisa(raw).baisa;
 
-/// Formats baisa amounts as Omani rial with 3 decimal places, e.g. `450.000 OMR`.
 String formatOmr(int baisa, {OmrSign sign = OmrSign.none}) {
-  final body = '${(baisa.abs() / 1000).toStringAsFixed(3)} OMR';
+  final body = Money.format(baisa.abs());
   switch (sign) {
     case OmrSign.plus:
       return '+$body';
     case OmrSign.minus:
       return '-$body';
     case OmrSign.none:
-      return body;
+      return baisa < 0 ? '-$body' : body;
   }
 }
 
-/// Human-readable bill due copy from a calendar date.
+class BillDuePill {
+  const BillDuePill(this.label, this.color);
+  final String label;
+  final Color color;
+}
+
+BillDuePill billDuePill(DateTime dueDate, {DateTime? now}) {
+  final origin = now ?? DateTime.now();
+  final due = DateTime(dueDate.year, dueDate.month, dueDate.day);
+  final today = DateTime(origin.year, origin.month, origin.day);
+  final days = due.difference(today).inDays;
+  if (days < 0) {
+    return BillDuePill(
+      AppI18n.ts(en: 'Overdue', ar: 'متأخر'),
+      const Color(0xFFE24B4A),
+    );
+  }
+  if (days == 0) {
+    return BillDuePill(
+      AppI18n.ts(en: 'Today', ar: 'اليوم'),
+      const Color(0xFFE0A100),
+    );
+  }
+  if (days == 1) {
+    return BillDuePill(
+      AppI18n.ts(en: 'Tomorrow', ar: 'غداً'),
+      const Color(0xFFE0A100),
+    );
+  }
+  return BillDuePill(
+    AppI18n.ts(en: 'in $days days', ar: 'خلال $days أيام'),
+    const Color(0xFF2E9E5B),
+  );
+}
+
 String formatBillDue(DateTime dueDate, {DateTime? now}) {
   final origin = now ?? DateTime.now();
   final due = DateTime(dueDate.year, dueDate.month, dueDate.day);
@@ -54,7 +79,6 @@ String formatBillDue(DateTime dueDate, {DateTime? now}) {
   );
 }
 
-/// First name from profile / session. Never a hardcoded person name.
 String resolveFirstName({
   String? displayName,
   String? email,
@@ -75,11 +99,9 @@ String resolveFirstName({
   return fallback;
 }
 
-/// Formats stored ISO-8601 UTC strings (e.g. from Realtime Database) for UI.
 class AppDateFormat {
   AppDateFormat._();
 
-  /// Short local date + 12h time with AM/PM (locale-aware, e.g. en / ar).
   static String formatIsoUtcForDisplay(BuildContext context, String? isoUtc) {
     if (isoUtc == null || isoUtc.isEmpty) return '';
     final parsed = DateTime.tryParse(isoUtc);

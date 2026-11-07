@@ -8,7 +8,6 @@ import '../services/admin_services.dart';
 import '../widgets/admin_widgets.dart';
 import './biller_form_screen.dart';
 
-// Admin page: list billers, then add, edit, or delete them.
 class BillerScreen extends StatefulWidget {
   const BillerScreen({super.key});
 
@@ -18,6 +17,7 @@ class BillerScreen extends StatefulWidget {
 
 class _BillerScreenState extends State<BillerScreen> {
   final _billerService = BillerService();
+  final _userService = AdminUserService();
   List<BillerModel> billerList = [];
   bool isLoading = true;
   String errorMessage = '';
@@ -28,7 +28,6 @@ class _BillerScreenState extends State<BillerScreen> {
     loadBillers();
   }
 
-  // Downloads billers from Firebase.
   Future<void> loadBillers() async {
     setState(() {
       isLoading = true;
@@ -36,9 +35,18 @@ class _BillerScreenState extends State<BillerScreen> {
     });
     try {
       final list = await _billerService.loadBillerList();
+      final users = await _userService.loadUserList();
+      final adminUids = {
+        for (final user in users)
+          if (user.isAdmin) user.uid,
+      };
       if (!mounted) return;
       setState(() {
-        billerList = list;
+        billerList = [
+          for (final biller in list)
+            if (biller.isAdminBiller || adminUids.contains(biller.ownerUserId))
+              biller,
+        ];
         isLoading = false;
       });
     } catch (e) {
@@ -50,7 +58,6 @@ class _BillerScreenState extends State<BillerScreen> {
     }
   }
 
-  // Opens the add form, then reloads if something was saved.
   Future<void> openAdd() async {
     final saved = await Navigator.of(context).push<bool>(
       MaterialPageRoute(builder: (context) => const BillerFormScreen()),
@@ -58,7 +65,6 @@ class _BillerScreenState extends State<BillerScreen> {
     if (saved == true) await loadBillers();
   }
 
-  // Opens the edit form with the old data already filled in.
   Future<void> openEdit(BillerModel biller) async {
     final saved = await Navigator.of(context).push<bool>(
       MaterialPageRoute(builder: (context) => BillerFormScreen(biller: biller)),
@@ -66,7 +72,6 @@ class _BillerScreenState extends State<BillerScreen> {
     if (saved == true) await loadBillers();
   }
 
-  // Asks "Are you sure?" then deletes the biller.
   Future<void> deleteBiller(BillerModel biller) async {
     final ok = await ConfirmDialog.show(
       context,
@@ -146,9 +151,16 @@ class _BillerScreenState extends State<BillerScreen> {
                           style: const TextStyle(fontWeight: FontWeight.w800),
                         ),
                         subtitle: Text(
-                          '${localizedBillerCategory(context, biller.category)}\n${biller.accountNumber}',
+                          [
+                            localizedBillerCategory(context, biller.category),
+                            AppI18n.t(
+                              context,
+                              en: 'Added by: Admin',
+                              ar: 'أضيف بواسطة: المدير',
+                            ),
+                          ].join('\n'),
                         ),
-                        isThreeLine: true,
+                        isThreeLine: false,
                         trailing: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [

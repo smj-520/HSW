@@ -1,4 +1,3 @@
-// One bill the user saved. Amounts are in baisa (1000 baisa = 1 OMR).
 class BillModel {
   const BillModel({
     required this.id,
@@ -9,6 +8,9 @@ class BillModel {
     required this.status,
     this.paidDate,
     this.note = '',
+    this.billerId,
+    this.category,
+    this.createdAt,
   });
 
   final String id;
@@ -16,10 +18,12 @@ class BillModel {
   final String name;
   final int amountBaisa;
   final DateTime dueDate;
-  // "unpaid" or "paid". Nothing else.
   final String status;
   final DateTime? paidDate;
   final String note;
+  final String? billerId;
+  final String? category;
+  final DateTime? createdAt;
 
   bool get isPaid => status == 'paid';
   bool get isUnpaid => !isPaid;

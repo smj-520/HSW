@@ -26,7 +26,9 @@ void main() {
 
     expect(
 
-      find.text('Enter your email — we will send a password reset link.'),
+      find.text(
+        'Enter your email. If an account exists, we send a 6-digit code. No link.',
+      ),
 
       findsOneWidget,
 

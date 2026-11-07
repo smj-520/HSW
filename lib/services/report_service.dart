@@ -1,51 +1,39 @@
+import '../core/finance_calculator.dart';
 import '../models/budget_models.dart';
 import '../models/transaction_model.dart';
+import '../utils/finance_math.dart' as math;
 import './transaction_service.dart';
 import '../models/report_model.dart';
 
-// Loads this user's transactions and turns them into weekly or monthly totals.
-// Screens must not do this math themselves.
 class FinanceReportService {
   FinanceReportService({TransactionService? transactionService})
       : _transactionService = transactionService ?? TransactionService();
 
   final TransactionService _transactionService;
 
-  // Monday 00:00 of the week that contains [day].
-  DateTime weekStart(DateTime day) {
-    final local = DateTime(day.year, day.month, day.day);
-    return local.subtract(Duration(days: local.weekday - DateTime.monday));
-  }
+  DateTime weekStart(DateTime day) => math.weekStart(day);
 
-  // Sunday 23:59:59 of that same week.
-  DateTime weekEnd(DateTime weekStartDate) {
-    final start = DateTime(weekStartDate.year, weekStartDate.month, weekStartDate.day);
-    final sunday = start.add(const Duration(days: 6));
-    return DateTime(sunday.year, sunday.month, sunday.day, 23, 59, 59, 999);
-  }
+  DateTime weekEnd(DateTime weekStartDate) => math.weekEnd(weekStartDate);
 
-  // First day of the month.
-  DateTime monthStart(DateTime day) {
-    return DateTime(day.year, day.month, 1);
-  }
+  DateTime monthStart(DateTime day) => math.monthStart(day);
 
-  // Last moment of the month.
-  DateTime monthEnd(DateTime day) {
-    final firstNext = DateTime(day.year, day.month + 1, 1);
-    return firstNext.subtract(const Duration(milliseconds: 1));
-  }
+  DateTime monthEnd(DateTime day) => math.monthEnd(day);
 
-  // True if this date is inside start..end (local calendar days).
   bool isInPeriod({
     required DateTime date,
     required DateTime startDate,
     required DateTime endDate,
   }) {
-    final local = date.toLocal();
-    return !local.isBefore(startDate) && !local.isAfter(endDate);
+    return math.isInPeriod(
+      date,
+      math.FinancePeriod(
+        start: startDate,
+        end: endDate,
+        isWeekly: false,
+      ),
+    );
   }
 
-  // Builds a weekly report for the week that contains [anchor].
   Future<ReportModel> buildWeeklyReport({
     required String uid,
     required DateTime anchor,
@@ -60,7 +48,6 @@ class FinanceReportService {
     );
   }
 
-  // Builds a monthly report for the month that contains [anchor].
   Future<ReportModel> buildMonthlyReport({
     required String uid,
     required DateTime anchor,
@@ -73,7 +60,6 @@ class FinanceReportService {
     );
   }
 
-  // Loads this user's rows, keeps those in the period, then adds up totals.
   Future<ReportModel> buildReport({
     required String uid,
     required DateTime startDate,
@@ -91,14 +77,10 @@ class FinanceReportService {
       return emptyReport(startDate: startDate, endDate: endDate, isWeekly: isWeekly);
     }
 
-    var totalIncome = 0;
-    var totalExpense = 0;
-    var totalSaving = 0;
-    for (final tx in rows) {
-      if (tx.isIncome) totalIncome += tx.amountBaisa;
-      if (tx.isExpense) totalExpense += tx.amountBaisa;
-      if (tx.isSaving) totalSaving += tx.amountBaisa;
-    }
+    final calc = FinanceCalculator.fromModels(rows);
+    final totalIncome = calc.totalIncome;
+    final totalExpense = calc.totalExpense;
+    final totalSaving = calc.totalSaving;
 
     return ReportModel(
       startDate: startDate,
@@ -107,31 +89,32 @@ class FinanceReportService {
       totalIncome: totalIncome,
       totalExpense: totalExpense,
       totalSaving: totalSaving,
-      balance: totalIncome - totalExpense,
+      balance: calc.availableBalance,
       categoryTotals: categoryTotalsFrom(rows, totalExpense),
       transactions: rows,
     );
   }
 
-  // Groups expenses by category. Percent = category amount / total expenses.
   List<CategoryTotal> categoryTotalsFrom(List<TransactionModel> rows, int totalExpense) {
     final sums = <String, int>{};
     for (final tx in rows) {
       if (!tx.isExpense) continue;
-      final id = (tx.category == null || tx.category!.isEmpty) ? 'others' : tx.category!;
+      final id = math.mapToBudgetCategory(tx.category);
       sums[id] = (sums[id] ?? 0) + tx.amountBaisa;
     }
     final ids = sums.keys.toList();
     ids.sort((a, b) => (sums[b] ?? 0).compareTo(sums[a] ?? 0));
+    final amounts = [for (final id in ids) sums[id] ?? 0];
+    final percents = FinanceCalculator.largestRemainderPercents(amounts);
     final list = <CategoryTotal>[];
-    for (final id in ids) {
-      final amount = sums[id] ?? 0;
+    for (var i = 0; i < ids.length; i++) {
+      final amount = amounts[i];
       list.add(
         CategoryTotal(
-          id: id,
-          name: findBudgetCategory(id)?.name ?? id,
+          id: ids[i],
+          name: findBudgetCategory(ids[i])?.name ?? ids[i],
           amountBaisa: amount,
-          percent: totalExpense <= 0 ? 0 : amount / totalExpense,
+          percent: percents[i] / 100,
         ),
       );
     }

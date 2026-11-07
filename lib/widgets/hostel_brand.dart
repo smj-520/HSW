@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import '../services/app_i18n.dart';
 import '../theme/app_colors.dart';
 
-/// Small wallet + coins icon used in headers and splash-style marks.
 class HostelWalletGlyph extends StatelessWidget {
   const HostelWalletGlyph({super.key, this.size = 36});
 
@@ -135,7 +134,6 @@ class _CoinPile extends StatelessWidget {
   }
 }
 
-/// App bar: optional back + centered brand (forgot / reset / success).
 class HostelBrandAppBar extends StatelessWidget implements PreferredSizeWidget {
   const HostelBrandAppBar({
     super.key,

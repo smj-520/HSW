@@ -1,6 +1,5 @@
 import './transaction_model.dart';
 
-// One expense group in a report (name + amount + share of total expenses).
 class CategoryTotal {
   const CategoryTotal({
     required this.id,
@@ -12,11 +11,9 @@ class CategoryTotal {
   final String id;
   final String name;
   final int amountBaisa;
-  // 0 to 1. Example: 0.4 means 40% of expenses.
   final double percent;
 }
 
-// Totals for one week or one month. Amounts are in baisa.
 class ReportModel {
   const ReportModel({
     required this.startDate,
@@ -43,7 +40,6 @@ class ReportModel {
   bool get hasData => transactions.isNotEmpty;
 }
 
-// Empty report for a period with no saved rows.
 ReportModel emptyReport({
   required DateTime startDate,
   required DateTime endDate,

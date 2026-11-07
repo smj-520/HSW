@@ -5,7 +5,6 @@ import 'package:phone_numbers_parser/phone_numbers_parser.dart';
 import '../services/app_i18n.dart';
 import '../utils/form_validators.dart';
 
-/// Phone field aligned with [AppTextField] / theme [InputDecoration] (outline, validation).
 class StyledCountryPhoneField extends StatelessWidget {
   const StyledCountryPhoneField({
     super.key,
@@ -149,7 +148,6 @@ class StyledCountryPhoneField extends StatelessWidget {
   }
 }
 
-/// Parses national digits into E.164 using selected ISO (alpha-2).
 String? tryParsePhoneE164(String nationalDigits, String isoAlpha2) {
   final iso = FormValidators.tryParseIso(isoAlpha2);
   if (iso == null) return null;

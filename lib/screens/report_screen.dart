@@ -4,7 +4,9 @@ import 'package:flutter/material.dart';
 
 import '../services/app_i18n.dart';
 import '../theme/app_colors.dart';
+import '../utils/app_messages.dart';
 import '../utils/formatters.dart';
+import '../utils/wallet_tc_logic.dart';
 import '../models/report_model.dart';
 import '../services/pdf_service.dart';
 import '../services/report_service.dart';
@@ -12,7 +14,6 @@ import '../widgets/report_widgets.dart';
 import '../widgets/transaction_widgets.dart';
 import '../widgets/responsive_layout.dart';
 
-// Report tab: weekly or monthly financial report from this user's transactions.
 class ReportScreen extends StatefulWidget {
   const ReportScreen({super.key});
 
@@ -41,7 +42,6 @@ class _ReportScreenState extends State<ReportScreen> {
     return FirebaseAuth.instance.currentUser?.uid;
   }
 
-  // Loads weekly or monthly totals for the chosen dates.
   Future<void> loadReport() async {
     final uid = sessionUid();
     if (uid == null) {
@@ -119,12 +119,11 @@ class _ReportScreenState extends State<ReportScreen> {
     return monthPeriodLabel(monthAnchor);
   }
 
-  // Builds a PDF from the report on screen, or shows why it cannot.
   Future<void> downloadReport() async {
     final current = report;
     if (current == null || !current.hasData) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(AppI18n.t(context, en: 'No data to download', ar: 'لا توجد بيانات للتنزيل'))),
+        const SnackBar(content: Text(AppMessages.noDataToDownload)),
       );
       return;
     }
@@ -197,9 +196,11 @@ class _ReportScreenState extends State<ReportScreen> {
         ),
       );
     }
-    if (report == null) {
+    if (report == null || !report.hasData) {
       return Center(
-        child: Text(AppI18n.t(context, en: 'No data for this period yet', ar: 'لا توجد بيانات لهذه الفترة بعد')),
+        child: Text(
+          emptyReportMessage(isWeekly: showWeekly, hasData: false),
+        ),
       );
     }
     return ListView(
@@ -259,7 +260,7 @@ class _ReportScreenState extends State<ReportScreen> {
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 16),
             child: Text(
-              AppI18n.t(context, en: 'No data for this period yet', ar: 'لا توجد بيانات لهذه الفترة بعد'),
+              emptyReportMessage(isWeekly: showWeekly, hasData: report.hasData),
               style: TextStyle(color: Colors.grey),
             ),
           )

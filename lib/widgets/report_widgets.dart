@@ -10,7 +10,6 @@ import '../utils/formatters.dart';
 import '../models/report_model.dart';
 import 'category_icon.dart';
 
-/// Shared page + card look for Summary and Report (styling only).
 abstract final class FinanceSurface {
   static Color pageBg(BuildContext context) => AppSurfaces.page(context);
   static Color ink(BuildContext context) => AppSurfaces.ink(context);
@@ -170,7 +169,6 @@ class FinancePageTitle extends StatelessWidget {
   }
 }
 
-// Week or month label with left/right arrows. Next is disabled in the future.
 class PeriodSwitcher extends StatelessWidget {
   const PeriodSwitcher({
     super.key,
@@ -221,14 +219,12 @@ class PeriodSwitcher extends StatelessWidget {
   }
 }
 
-// Turns a week start/end into text like "21 Apr – 27 Apr 2026".
 String weekPeriodLabel(DateTime startDate, DateTime endDate) {
   final start = DateFormat('d MMM').format(startDate);
   final end = DateFormat('d MMM yyyy').format(endDate);
   return '$start – $end';
 }
 
-// Turns a month into text like "May 2026".
 String monthPeriodLabel(DateTime day) {
   return DateFormat('MMMM yyyy').format(day);
 }
@@ -242,7 +238,6 @@ const _barColors = [
   Color(0xFFE67E22),
 ];
 
-// Bar chart of expenses by category, with percentages from the report.
 class CategoryChart extends StatelessWidget {
   const CategoryChart({super.key, required this.categoryTotals});
 
@@ -254,7 +249,7 @@ class CategoryChart extends StatelessWidget {
       return const Padding(
         padding: EdgeInsets.symmetric(vertical: 16),
         child: Text(
-          'No data for this period yet',
+          'No data',
           style: TextStyle(color: Colors.grey, fontSize: 15),
         ),
       );
@@ -349,7 +344,6 @@ class CategoryChart extends StatelessWidget {
   }
 }
 
-// One report line: date, title, type, amount.
 class ReportTransactionRow extends StatelessWidget {
   const ReportTransactionRow({super.key, required this.transaction});
 

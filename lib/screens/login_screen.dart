@@ -6,6 +6,7 @@ import '../services/app_i18n.dart';
 import '../services/auth_error_messages.dart';
 import '../services/remember_credentials.dart';
 import '../services/user_profile_repository.dart';
+import '../utils/admin_logic.dart';
 import '../utils/form_validators.dart';
 import '../widgets/app_text_field.dart';
 import '../widgets/auth_widgets.dart';
@@ -84,8 +85,8 @@ class _LoginScreenState extends State<LoginScreen> {
               content: Text(
                 AppI18n.t(
                   context,
-                  en: 'Your account has been blocked',
-                  ar: 'تم حظر حسابك',
+                  en: AdminMessages.accountBlocked,
+                  ar: 'الحساب محظور',
                 ),
               ),
             ),
@@ -111,7 +112,6 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  // Looks at the database role, then opens Admin Home or User Home.
   Future<void> _openHomeForSignedInUser() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
@@ -124,12 +124,10 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  // Replaces login with Admin Home. Back cannot return to login.
   void _openAdminHome() {
     Navigator.of(context).pushNamedAndRemoveUntil('/admin', (route) => false);
   }
 
-  // Replaces login with the normal user Home. Back cannot return to login.
   void _openUserHome() {
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(builder: (context) => const UserHomeScreen()),

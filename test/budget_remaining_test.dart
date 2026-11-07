@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:cpp/models/budget_models.dart';
@@ -20,5 +21,27 @@ void main() {
     );
     expect(over.isOverall, isTrue);
     expect(over.remainingBaisa, -30000);
+  });
+
+  test('Budget usage percent and colors', () {
+    expect(
+      budgetUsagePercent(spentBaisa: 0, budgetBaisa: 0),
+      isNull,
+    );
+    expect(
+      budgetUsagePercent(spentBaisa: 40000, budgetBaisa: 100000),
+      40,
+    );
+    expect(
+      budgetUsagePercent(spentBaisa: 80000, budgetBaisa: 100000),
+      80,
+    );
+    expect(
+      budgetUsagePercent(spentBaisa: 120000, budgetBaisa: 100000),
+      120,
+    );
+    expect(budgetUsageColor(40), const Color(0xFF2E9E5B));
+    expect(budgetUsageColor(80), const Color(0xFFE0A100));
+    expect(budgetUsageColor(101), const Color(0xFFE24B4A));
   });
 }

@@ -8,7 +8,6 @@ import '../utils/formatters.dart';
 import '../models/transaction_model.dart';
 import 'category_icon.dart';
 
-// One row: day, title, type, and the amount in the right color.
 class TransactionRow extends StatelessWidget {
   const TransactionRow({super.key, required this.transaction});
 
@@ -130,7 +129,6 @@ class TransactionRow extends StatelessWidget {
   }
 }
 
-// One bar on the expenses chart.
 class CategoryBar {
   const CategoryBar({
     required this.name,
@@ -147,7 +145,6 @@ class CategoryBar {
   final String? categoryId;
 }
 
-// Bar chart of expenses by category, plus the top percentages.
 class SummaryChart extends StatelessWidget {
   const SummaryChart({super.key, required this.bars});
 
@@ -254,7 +251,6 @@ class SummaryChart extends StatelessWidget {
   }
 }
 
-// White card: total income, total expenses, and a green/red bar.
 class IncomeExpenseCard extends StatelessWidget {
   const IncomeExpenseCard({
     super.key,

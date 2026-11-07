@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../constants/categories.dart';
 import '../services/app_i18n.dart';
 
-// One budget the user saved. Amounts are in baisa (1000 baisa = 1 OMR).
 class BudgetModel {
   const BudgetModel({
     required this.id,
@@ -20,19 +20,15 @@ class BudgetModel {
   final DateTime? date;
   final String note;
 
-  // True when this is the one overall limit (no category).
   bool get isOverall => category == null || category!.isEmpty;
 
-  // How much is left. Can be negative if they spent too much.
   int get remainingBaisa => amountBaisa - usedAmountBaisa;
 }
 
-// Turns baisa into text like "60 OMR" for the Budget screens.
 String formatBudgetOmr(int baisa) {
   return '${(baisa / 1000).round()} OMR';
 }
 
-// One item in the category dropdown. Easy to add more later.
 class BudgetCategory {
   const BudgetCategory({
     required this.id,
@@ -43,16 +39,26 @@ class BudgetCategory {
   final String name;
 }
 
-// The five categories from the screenshot.
-const List<BudgetCategory> budgetCategories = [
-  BudgetCategory(id: 'food', name: 'Food'),
-  BudgetCategory(id: 'shopping', name: 'Shopping'),
-  BudgetCategory(id: 'home', name: 'Home'),
-  BudgetCategory(id: 'wifi', name: 'wifi'),
-  BudgetCategory(id: 'others', name: 'Others'),
+final List<BudgetCategory> budgetCategories = [
+  for (final cat in kExpenseCategories) BudgetCategory(id: cat.id, name: cat.en),
 ];
 
-// Finds a category by its id. Returns null if not found.
+int? budgetUsagePercent({required int spentBaisa, required int budgetBaisa}) {
+  if (budgetBaisa <= 0) return null;
+  return (spentBaisa * 100 + budgetBaisa ~/ 2) ~/ budgetBaisa;
+}
+
+Color budgetUsageColor(int percent) {
+  if (percent > 100) return const Color(0xFFE24B4A);
+  if (percent >= 80) return const Color(0xFFE0A100);
+  return const Color(0xFF2E9E5B);
+}
+
+String budgetDocId(String? category) {
+  final id = category?.trim() ?? '';
+  return id.isEmpty ? 'overall' : id;
+}
+
 BudgetCategory? findBudgetCategory(String? id) {
   if (id == null || id.isEmpty) return null;
   for (final item in budgetCategories) {
@@ -62,18 +68,9 @@ BudgetCategory? findBudgetCategory(String? id) {
 }
 
 String localizedBudgetCategoryName(BuildContext context, String? id) {
-  switch (id) {
-    case 'food':
-      return AppI18n.t(context, en: 'Food', ar: 'طعام');
-    case 'shopping':
-      return AppI18n.t(context, en: 'Shopping', ar: 'تسوق');
-    case 'home':
-      return AppI18n.t(context, en: 'Home', ar: 'المنزل');
-    case 'wifi':
-      return AppI18n.t(context, en: 'wifi', ar: 'واي فاي');
-    case 'others':
-      return AppI18n.t(context, en: 'Others', ar: 'أخرى');
-    default:
-      return AppI18n.t(context, en: 'Budget', ar: 'الميزانية');
+  final cat = expenseCategoryById(normalizeExpenseCategoryId(id));
+  if (cat == null) {
+    return AppI18n.t(context, en: 'Budget', ar: 'الميزانية');
   }
+  return cat.label(context);
 }

@@ -2,7 +2,6 @@ import 'package:phone_numbers_parser/phone_numbers_parser.dart';
 
 import '../services/app_i18n.dart';
 
-/// Form validation helpers — return `null` when valid, else user-facing message.
 abstract final class FormValidators {
   static const int minPasswordPolicyLength = 8;
   static const int minLoginPasswordLength = 6;
@@ -10,15 +9,12 @@ abstract final class FormValidators {
   static final RegExp _hasUpper = RegExp(r'[A-Z]');
   static final RegExp _hasLower = RegExp(r'[a-z]');
   static final RegExp _hasDigit = RegExp(r'\d');
-  /// Symbol / punctuation (not letter or digit). Space alone is not enough.
   static final RegExp _hasSpecial = RegExp(r'[^A-Za-z0-9\s]');
 
-  /// Gmail / Googlemail only. Strict local-part rules (not a mailbox existence check).
   static final RegExp _gmailLocal = RegExp(
     r'^[a-z0-9](?:[a-z0-9._+-]*[a-z0-9])?@(gmail|googlemail)\.com$',
   );
 
-  /// Short hint for password fields (register / reset / change password).
   static String passwordPolicyHint() {
     return AppI18n.ts(
       en:
@@ -39,7 +35,6 @@ abstract final class FormValidators {
     return null;
   }
 
-  /// Normalizes to lowercase; only @gmail.com / @googlemail.com.
   static String? gmailOnly(String? value) {
     final r = required(value, fieldEn: 'Email', fieldAr: 'البريد');
     if (r != null) return r;
@@ -78,12 +73,10 @@ abstract final class FormValidators {
     return '$v@gmail.com';
   }
 
-  /// Trims, lowercases, and strips spaces (any domain).
   static String normalizeEmail(String value) {
     return value.trim().toLowerCase().replaceAll(RegExp(r'\s'), '');
   }
 
-  /// Full email (login / forgot / generic) — not restricted to Gmail.
   static String? emailAddress(String? value) {
     final r = required(value, fieldEn: 'Email', fieldAr: 'البريد الإلكتروني');
     if (r != null) return r;
@@ -106,7 +99,6 @@ abstract final class FormValidators {
     return null;
   }
 
-  /// Username only; app appends @gmail.com automatically.
   static String? gmailUsername(String? value) {
     final r = required(value, fieldEn: 'Gmail username', fieldAr: 'اسم مستخدم Gmail');
     if (r != null) return r;
@@ -138,7 +130,6 @@ abstract final class FormValidators {
     return null;
   }
 
-  /// Login: required; min length matches Firebase Auth floor (legacy accounts).
   static String? loginPassword(String? value) {
     final r = required(value, fieldEn: 'Password', fieldAr: 'كلمة المرور');
     if (r != null) return r;
@@ -151,7 +142,6 @@ abstract final class FormValidators {
     return null;
   }
 
-  /// Register, reset, and new password: 8+ with upper, lower, digit, special.
   static String? strongPassword(String? value) {
     final r = required(value, fieldEn: 'Password', fieldAr: 'كلمة المرور');
     if (r != null) return r;
@@ -210,7 +200,6 @@ abstract final class FormValidators {
     return null;
   }
 
-  /// National number for selected [country] (digits / spaces / hyphens stripped).
   static String? phoneNational(String? value, IsoCode country) {
     final r = required(value, fieldEn: 'Phone number', fieldAr: 'رقم الهاتف');
     if (r != null) return r;
@@ -254,7 +243,6 @@ abstract final class FormValidators {
     };
   }
 
-  /// When [oldPassword] is non-null and non-empty, new must differ.
   static String? newPasswordDifferent({
     required String? newPassword,
     String? oldPassword,

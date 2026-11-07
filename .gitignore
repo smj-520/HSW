@@ -59,6 +59,11 @@ node_modules/
 # Generated build files
 **/build/
  
+# Firebase / Apps Script secrets (never commit)
+**/serviceAccount*.json
+**/*-firebase-adminsdk-*.json
+apps_script/*.json
+
 # Environment secrets
 .env
 .env.*

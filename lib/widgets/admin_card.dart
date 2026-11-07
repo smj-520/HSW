@@ -54,6 +54,7 @@ class _AdminCardState extends State<AdminCard> {
         curve: Curves.easeOut,
         child: Container(
           width: double.infinity,
+          height: double.infinity,
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
           decoration: BoxDecoration(
             color: fill,
@@ -61,8 +62,8 @@ class _AdminCardState extends State<AdminCard> {
             border: Border.all(color: border, width: 0.5),
           ),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
                 width: 60,
@@ -82,6 +83,7 @@ class _AdminCardState extends State<AdminCard> {
                 widget.title,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
@@ -94,6 +96,7 @@ class _AdminCardState extends State<AdminCard> {
                 widget.subtitle,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 12,
                   color: scheme.onSurfaceVariant,
@@ -101,7 +104,7 @@ class _AdminCardState extends State<AdminCard> {
                 ),
               ),
               if (widget.badge != null && widget.badge!.isNotEmpty) ...[
-                const Spacer(),
+                const SizedBox(height: 10),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
@@ -112,6 +115,7 @@ class _AdminCardState extends State<AdminCard> {
                     widget.badge!,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w500,

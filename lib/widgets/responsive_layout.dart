@@ -1,19 +1,16 @@
 import 'package:flutter/material.dart';
 
-/// Horizontal padding from viewport width (phone / tablet / desktop).
 double responsivePagePaddingX(double width) {
   if (width >= 700) return (width * 0.03).clamp(16.0, 32.0);
   if (width >= 400) return 16;
   return 12;
 }
 
-/// Max width for full content pages (home, lists, reports). ~94% on tablets.
 double responsiveContentMaxWidth(double width) {
   if (width >= 700) return width * 0.94;
   return width;
 }
 
-/// Max width for auth-style forms so lines stay readable but use tablet space.
 double responsiveFormMaxWidth(double width) {
   if (width >= 1100) return (width * 0.58).clamp(640.0, 900.0);
   if (width >= 700) return width * 0.78;
@@ -21,7 +18,6 @@ double responsiveFormMaxWidth(double width) {
   return width;
 }
 
-/// Scrollable column that vertically centers content when shorter than the viewport.
 class ResponsiveScrollableCenter extends StatelessWidget {
   const ResponsiveScrollableCenter({
     super.key,
@@ -67,7 +63,6 @@ class ResponsiveScrollableCenter extends StatelessWidget {
   }
 }
 
-/// Centers page content and caps width at [responsiveContentMaxWidth].
 class ResponsiveContent extends StatelessWidget {
   const ResponsiveContent({super.key, required this.child});
 

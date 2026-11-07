@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-/// Lightweight route transitions for navigation polish.
 abstract final class AppTransitions {
   static Route<T> fadeSlide<T extends Object?>(
     Widget page, {
@@ -36,7 +35,6 @@ abstract final class AppTransitions {
     );
   }
 
-  /// Shorter / subtler — stacked flows (settings sub-pages, secondary pushes).
   static Route<T> fadeSlideSheet<T extends Object?>(
     Widget page, {
     String? routeName,

@@ -1,6 +1,9 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
+import '../constants/categories.dart';
+import '../core/budget_calculator.dart';
+import '../core/money.dart';
 import '../services/app_i18n.dart';
 import '../models/budget_models.dart';
 import 'category_icon.dart';
@@ -8,7 +11,6 @@ import 'category_icon.dart';
 const _ink = Color(0xFF1F4D3D);
 const _muted = Color(0xFF8A8F8A);
 
-// One category row: icon, name, used of limit, progress bar, edit, delete.
 class BudgetCard extends StatelessWidget {
   const BudgetCard({
     super.key,
@@ -16,29 +18,16 @@ class BudgetCard extends StatelessWidget {
     this.onTap,
     this.onEdit,
     this.onDelete,
+    this.needsAdjusting = false,
   });
 
   final BudgetModel budget;
   final VoidCallback? onTap;
   final VoidCallback? onEdit;
   final VoidCallback? onDelete;
+  final bool needsAdjusting;
 
-  Color _accentFor(String? id) {
-    switch (id) {
-      case 'food':
-        return const Color(0xFFFF8A65);
-      case 'shopping':
-        return const Color(0xFF7E57C2);
-      case 'home':
-        return const Color(0xFF26A69A);
-      case 'wifi':
-        return const Color(0xFF42A5F5);
-      case 'others':
-        return const Color(0xFFF4C430);
-      default:
-        return const Color(0xFF27AE60);
-    }
-  }
+  Color _accentFor(String? id) => categoryTileColor(id);
 
   @override
   Widget build(BuildContext context) {
@@ -67,6 +56,12 @@ class BudgetCard extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(14, 14, 6, 14),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(20),
+              border: needsAdjusting
+                  ? Border.all(color: const Color(0xFFE24B4A), width: 1.4)
+                  : null,
+              color: needsAdjusting
+                  ? const Color(0xFFE24B4A).withValues(alpha: 0.06)
+                  : null,
               boxShadow: [
                 BoxShadow(
                   color: const Color(0xFF1F4D3D).withValues(alpha: 0.07),
@@ -136,23 +131,32 @@ class BudgetCard extends StatelessWidget {
 
 const _usedColor = Color(0xFFFF6B6B);
 const _remainColor = Color(0xFF27AE60);
+const _allocatedColor = Color(0xFF42A5F5);
 
-// The big card with the pie chart, total, used, and remaining.
 class TotalBudgetCard extends StatelessWidget {
-  const TotalBudgetCard({super.key, required this.overall, this.onTap});
+  const TotalBudgetCard({
+    super.key,
+    required this.calculator,
+    this.onTap,
+  });
 
-  final BudgetModel? overall;
+  final BudgetCalculator calculator;
   final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    final total = overall?.amountBaisa ?? 0;
-    final used = overall?.usedAmountBaisa ?? 0;
-    final remaining = total - used;
-    final usedSlice = used < 0 ? 0 : used;
-    final remainSlice = remaining < 0 ? 0 : remaining;
-    final hasPie = total > 0 && (usedSlice + remainSlice) > 0;
-    final remainShown = remaining < 0 ? 0 : remaining;
+    final income = calculator.income;
+    final allocated = calculator.totalAllocated < 0 ? 0 : calculator.totalAllocated;
+    final unallocated = calculator.unallocated;
+    final spent = calculator.totalSpent < 0 ? 0 : calculator.totalSpent;
+    final balance = calculator.totalBalance < 0 ? 0 : calculator.totalBalance;
+    final over = calculator.isOverAllocated;
+    final categorySlices = <({ExpenseCategory cat, int amount})>[
+      for (final cat in kExpenseCategories)
+        if ((calculator.categoryLimits[cat.id] ?? 0) > 0)
+          (cat: cat, amount: calculator.categoryLimits[cat.id]!),
+    ];
+    final hasPie = categorySlices.isNotEmpty || unallocated > 0;
 
     return Material(
       color: Theme.of(context).cardColor,
@@ -177,7 +181,7 @@ class TotalBudgetCard extends StatelessWidget {
           child: Column(
             children: [
               Text(
-                AppI18n.t(context, en: 'Total Budget', ar: 'إجمالي الميزانية'),
+                AppI18n.t(context, en: 'This month', ar: 'هذا الشهر'),
                 style: const TextStyle(
                   color: _muted,
                   fontSize: 13,
@@ -202,50 +206,50 @@ class TotalBudgetCard extends StatelessWidget {
                                   startDegreeOffset: -90,
                                   pieTouchData: PieTouchData(enabled: false),
                                   sections: [
-                                    PieChartSectionData(
-                                      value: remainSlice.toDouble(),
-                                      color: _remainColor,
-                                      radius: size * 0.168,
-                                      title: '',
-                                      gradient: const LinearGradient(
-                                        colors: [
-                                          Color(0xFF2E7D5B),
-                                          Color(0xFF27AE60),
-                                          Color(0xFF4ECDC4),
-                                        ],
+                                    for (final slice in categorySlices)
+                                      PieChartSectionData(
+                                        value: slice.amount.toDouble(),
+                                        color: slice.cat.color,
+                                        radius: size * 0.178,
+                                        title: '',
                                       ),
-                                    ),
-                                    PieChartSectionData(
-                                      value: usedSlice.toDouble() <= 0
-                                          ? 0.01
-                                          : usedSlice.toDouble(),
-                                      color: _usedColor,
-                                      radius: size * 0.178,
-                                      title: '',
-                                      gradient: const LinearGradient(
-                                        colors: [
-                                          Color(0xFFFF8A65),
-                                          Color(0xFFFF6B6B),
-                                        ],
+                                    if (unallocated > 0)
+                                      PieChartSectionData(
+                                        value: unallocated.toDouble(),
+                                        color: const Color(0xFFD9E8DF),
+                                        radius: size * 0.168,
+                                        title: '',
                                       ),
-                                    ),
                                   ],
                                 ),
                               )
                             : CustomPaint(painter: _EmptyRingPainter()),
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 28),
-                          child: FittedBox(
-                            fit: BoxFit.scaleDown,
-                            child: Text(
-                              formatBudgetOmr(total),
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(
-                                fontSize: 22,
-                                fontWeight: FontWeight.w800,
-                                color: _ink,
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                AppI18n.t(context, en: 'Total Balance', ar: 'الرصيد الكلي'),
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: _muted,
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
-                            ),
+                              FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Text(
+                                  Money.format(balance),
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.w800,
+                                    color: _ink,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ],
@@ -254,30 +258,74 @@ class TotalBudgetCard extends StatelessWidget {
                 },
               ),
               const SizedBox(height: 18),
-              Row(
+              Wrap(
+                spacing: 12,
+                runSpacing: 8,
                 children: [
-                  Expanded(
-                    child: _LegendStat(
-                      color: _usedColor,
-                      label: AppI18n.t(
-                        context,
-                        en: 'Used          ${formatBudgetOmr(used)}',
-                        ar: 'المستخدم          ${formatBudgetOmr(used)}',
-                      ),
-                    ),
+                  _SummaryChip(
+                    color: const Color(0xFF1F4D3D),
+                    label: AppI18n.t(context, en: 'Total Balance', ar: 'الرصيد الكلي'),
+                    value: Money.format(balance),
                   ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: _LegendStat(
-                      color: _remainColor,
-                      label: AppI18n.t(
-                        context,
-                        en: 'Remaining  ${formatBudgetOmr(remainShown)}',
-                        ar: 'المتبقي  ${formatBudgetOmr(remainShown)}',
-                      ),
-                    ),
+                  _SummaryChip(
+                    color: _remainColor,
+                    label: AppI18n.t(context, en: 'Income', ar: 'الدخل'),
+                    value: Money.format(income),
+                  ),
+                  _SummaryChip(
+                    color: _allocatedColor,
+                    label: AppI18n.t(context, en: 'Allocated', ar: 'المخصص'),
+                    value: Money.format(allocated),
+                  ),
+                  _SummaryChip(
+                    color: over ? _usedColor : _remainColor,
+                    label: AppI18n.t(context, en: 'Unallocated', ar: 'غير المخصص'),
+                    value: Money.format(unallocated),
+                  ),
+                  _SummaryChip(
+                    color: _usedColor,
+                    label: AppI18n.t(context, en: 'Spent', ar: 'المصروف'),
+                    value: Money.format(spent),
                   ),
                 ],
+              ),
+              if (categorySlices.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 10,
+                  runSpacing: 6,
+                  alignment: WrapAlignment.center,
+                  children: [
+                    for (final slice in categorySlices)
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: 8,
+                            height: 8,
+                            decoration: BoxDecoration(
+                              color: slice.cat.color,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            slice.cat.shortLabel(context),
+                            style: const TextStyle(fontSize: 11, color: _muted),
+                          ),
+                        ],
+                      ),
+                  ],
+                ),
+              ],
+              const SizedBox(height: 8),
+              Text(
+                AppI18n.t(
+                  context,
+                  en: 'Donut: allocated by category',
+                  ar: 'الرسم: المخصص حسب الفئة',
+                ),
+                style: const TextStyle(fontSize: 11, color: _muted),
               ),
             ],
           ),
@@ -287,48 +335,54 @@ class TotalBudgetCard extends StatelessWidget {
   }
 }
 
-class _LegendStat extends StatelessWidget {
-  const _LegendStat({required this.color, required this.label});
+class _SummaryChip extends StatelessWidget {
+  const _SummaryChip({
+    required this.color,
+    required this.label,
+    required this.value,
+  });
 
   final Color color;
   final String label;
+  final String value;
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Container(
-          width: 10,
-          height: 10,
-          decoration: BoxDecoration(
-            color: color,
-            shape: BoxShape.circle,
-            boxShadow: [
-              BoxShadow(
-                color: color.withValues(alpha: 0.35),
-                blurRadius: 4,
-              ),
-            ],
+    return SizedBox(
+      width: 150,
+      child: Row(
+        children: [
+          Container(
+            width: 10,
+            height: 10,
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
           ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Text(
-            label,
-            style: const TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: _ink,
-              height: 1.25,
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: const TextStyle(fontSize: 11, color: _muted),
+                ),
+                Text(
+                  value,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: _ink,
+                  ),
+                ),
+              ],
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
 
-// A simple empty circle when there is no overall budget yet.
 class _EmptyRingPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
@@ -360,7 +414,6 @@ class _EmptyRingPainter extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
-// Dropdown of Food, Shopping, Home, wifi, Others. Null means no category.
 class CategoryDropdown extends StatelessWidget {
   const CategoryDropdown({
     super.key,
@@ -382,7 +435,6 @@ class CategoryDropdown extends StatelessWidget {
       decoration: _fieldDecoration(context, large: large),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
-          // Empty string means "None" (Flutter dropdowns cannot use a null value).
           value: selectedId ?? (includeNone ? '' : null),
           isExpanded: true,
           icon: Icon(Icons.expand_more_rounded, size: large ? 28 : 24),
@@ -436,7 +488,6 @@ class CategoryDropdown extends StatelessWidget {
   }
 }
 
-// Same white rounded look as the other form boxes.
 InputDecoration _fieldDecoration(BuildContext context, {required bool large}) {
   const radius = BorderRadius.all(Radius.circular(18));
   final line = Theme.of(context).colorScheme.outline.withValues(alpha: 0.55);

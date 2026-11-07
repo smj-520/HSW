@@ -13,11 +13,15 @@ import './services/app_settings_controller.dart';
 import './screens/auth_session_router.dart';
 import './screens/login_screen.dart';
 import './theme/app_theme.dart';
+import './services/bill_reminder_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   try {
     await AppSettingsController.instance.load();
+  } catch (_) {}
+  try {
+    await BillReminderService.instance.init();
   } catch (_) {}
   runApp(const MyApp());
 }
@@ -47,7 +51,7 @@ class MyApp extends StatelessWidget {
             Locale('en'),
             Locale('ar'),
           ],
-          localeResolutionCallback: (_, __) => settings.locale,
+          localeResolutionCallback: (_, _) => settings.locale,
           builder: (context, child) {
             return Directionality(
               textDirection:
@@ -87,8 +91,6 @@ class _FirebaseBootstrapState extends State<_FirebaseBootstrap> {
     _initFuture = _bootstrapFirebase();
   }
 
-  /// Wait until after the first frame so the Android/iOS launch layer can hand
-  /// off to Flutter UI (avoids looking "stuck" on the native splash).
   Future<void> _bootstrapFirebase() async {
     final binding = WidgetsBinding.instance;
     await binding.endOfFrame;
@@ -109,8 +111,6 @@ class _FirebaseBootstrapState extends State<_FirebaseBootstrap> {
     );
   }
 
-  /// Hot restart / race conditions can leave the native default app alive while
-  /// `Firebase.apps` is still empty in Dart, or a second init is attempted.
   static bool _isDuplicateDefaultAppError(Object error) {
     if (error is FirebaseException && error.code == 'duplicate-app') {
       return true;
@@ -121,8 +121,6 @@ class _FirebaseBootstrapState extends State<_FirebaseBootstrap> {
 
   Future<void> _initializeFirebase() async {
     if (Firebase.apps.isNotEmpty) return;
-    // Firebase in this project is configured for Android only.
-    // On unsupported platforms, continue without Firebase to avoid hard failure.
     if (kIsWeb) return;
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
@@ -135,8 +133,6 @@ class _FirebaseBootstrapState extends State<_FirebaseBootstrap> {
           rethrow;
         } on PlatformException catch (e) {
           if (_isDuplicateDefaultAppError(e)) return;
-          // Some devices return channel-error on first native handshake.
-          // Retry once with default native config from google-services.json.
           if (e.code == 'channel-error') {
             await Future<void>.delayed(const Duration(milliseconds: 250));
             try {

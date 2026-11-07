@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 
+import '../navigation/app_transitions.dart';
 import '../services/app_i18n.dart';
+import '../services/otp_service.dart';
 import '../services/password_reset_service.dart';
 import '../utils/form_validators.dart';
+import './otp_code_screen.dart';
+import './reset_password_screen.dart';
 import '../widgets/app_text_field.dart';
 import '../widgets/auth_widgets.dart';
 import '../widgets/loading_overlay.dart';
@@ -33,32 +37,47 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     try {
       await PasswordResetService().sendCode(email);
       if (!mounted) return;
+      await Navigator.of(context).push(
+        AppTransitions.fadeSlide(
+          OtpCodeScreen(
+            email: email,
+            purpose: OtpService.resetPurpose,
+            titleEn: 'Enter the code',
+            titleAr: 'أدخل الرمز',
+            resendCode: () => PasswordResetService().sendCode(email),
+            verifyCode: (_) async {},
+            onVerified: (code) async {
+              if (!mounted) return;
+              await Navigator.of(context).pushReplacement(
+                AppTransitions.fadeSlide(
+                  ResetPasswordScreen(
+                    recoveryEmail: email,
+                    otpCode: code,
+                  ),
+                  routeName: '/reset-password',
+                ),
+              );
+            },
+          ),
+          routeName: '/forgot/otp',
+        ),
+      );
+    } on PasswordResetException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
+    } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
             AppI18n.t(
               context,
-              en:
-                  'If an account exists, we sent a password reset link. Open it in your email.',
-              ar:
-                  'إذا كان هناك حساب، أرسلنا رابط إعادة تعيين كلمة المرور. افتحه من بريدك.',
+              en: 'Could not send the email. Try again.',
+              ar: 'تعذر إرسال البريد. حاول مرة أخرى.',
             ),
           ),
         ),
       );
-      if (Navigator.of(context).canPop()) {
-        Navigator.of(context).pop();
-      }
-    } catch (e) {
-      if (!mounted) return;
-      final message = e is PasswordResetException
-          ? e.message
-          : AppI18n.t(
-              context,
-              en: 'Could not send the email. Try again.',
-              ar: 'تعذر إرسال البريد. حاول مرة أخرى.',
-            );
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -70,8 +89,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       loading: _loading,
       message: AppI18n.t(
         context,
-        en: 'Sending reset email…',
-        ar: 'جارٍ إرسال بريد إعادة التعيين...',
+        en: 'Sending your 6-digit code…',
+        ar: 'جارٍ إرسال الرمز...',
       ),
       child: Scaffold(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -126,9 +145,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                                   subtitle: AppI18n.t(
                                     context,
                                     en:
-                                        'Enter your email — we will send a password reset link.',
+                                        'Enter your email. If an account exists, we send a 6-digit code. No link.',
                                     ar:
-                                        'أدخل بريدك — سنرسل رابط إعادة تعيين كلمة المرور.',
+                                        'أدخل بريدك — سنرسل رمزاً من 6 أرقام. بدون رابط.',
                                   ),
                                   logoHeight: logoH,
                                 ),

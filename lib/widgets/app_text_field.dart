@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-/// TextFormField with prefix icon, optional suffix, and soft error container.
 class AppTextField extends StatelessWidget {
   const AppTextField({
     super.key,

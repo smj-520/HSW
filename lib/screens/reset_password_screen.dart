@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../navigation/app_transitions.dart';
+import './success_screen.dart';
 import '../services/app_i18n.dart';
 import '../services/password_reset_service.dart';
 import '../utils/form_validators.dart';
@@ -10,19 +11,18 @@ import '../widgets/hostel_brand.dart';
 import '../widgets/loading_overlay.dart';
 import '../widgets/primary_action_button.dart';
 import '../widgets/responsive_layout.dart';
-import './login_screen.dart';
 
 class ResetPasswordScreen extends StatefulWidget {
   const ResetPasswordScreen({
     super.key,
     this.recoveryEmail,
     this.previousPassword,
-    this.resetToken,
+    this.otpCode,
   });
 
   final String? recoveryEmail;
   final String? previousPassword;
-  final String? resetToken;
+  final String? otpCode;
 
   @override
   State<ResetPasswordScreen> createState() => _ResetPasswordScreenState();
@@ -79,41 +79,53 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
           content: Text(
             AppI18n.t(
               context,
-              en: 'Open Forgot password and use the email reset link.',
-              ar: 'افتح نسيت كلمة المرور واستخدم رابط البريد.',
+              en: 'Open Forgot password and enter the 6-digit email code first.',
+              ar: 'افتح نسيت كلمة المرور وأدخل رمز البريد أولاً.',
             ),
           ),
         ),
       );
       return;
     }
-    setState(() => _loading = true);
-    try {
-      await PasswordResetService().sendCode(email);
-      if (!mounted) return;
-      setState(() => _loading = false);
+    final code = widget.otpCode?.replaceAll(RegExp(r'\D'), '') ?? '';
+    if (code.length != 6) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
             AppI18n.t(
               context,
-              en: 'Check your email and open the reset link to set a new password.',
-              ar: 'تحقق من بريدك وافتح رابط إعادة التعيين لتعيين كلمة مرور جديدة.',
+              en: 'Verify the 6-digit email code first.',
+              ar: 'تحقق أولاً من رمز البريد المكوّن من 6 أرقام.',
             ),
           ),
         ),
       );
-      Navigator.of(context).pushAndRemoveUntil(
+      return;
+    }
+
+    setState(() => _loading = true);
+    try {
+      await PasswordResetService().resetPassword(
+        email: email,
+        code: code,
+        newPassword: _newPass.text,
+      );
+      if (!mounted) return;
+      await Navigator.of(context).pushAndRemoveUntil(
         AppTransitions.fadeSlide(
-          const LoginScreen(),
-          routeName: '/login',
+          const SuccessScreen(),
+          routeName: '/reset-success',
         ),
         (route) => false,
       );
     } on PasswordResetException catch (e) {
       if (!mounted) return;
-      setState(() => _loading = false);
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
+    } finally {
+      if (mounted) setState(() => _loading = false);
     }
   }
 

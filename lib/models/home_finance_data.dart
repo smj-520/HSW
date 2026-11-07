@@ -1,3 +1,5 @@
+import '../core/finance_calculator.dart';
+
 enum BillKind { electricity, internet, generic }
 
 enum TransactionKind { expense, income, saving }
@@ -8,12 +10,27 @@ class BillItem {
     required this.name,
     required this.dueDate,
     this.kind = BillKind.generic,
+    this.amountBaisa = 0,
+    this.status = 'unpaid',
+    this.category,
+    this.userId = '',
+    this.billerId,
+    this.note = '',
   });
 
   final String id;
   final String name;
   final DateTime dueDate;
   final BillKind kind;
+  final int amountBaisa;
+  final String status;
+  final String? category;
+  final String userId;
+  final String? billerId;
+  final String note;
+
+  bool get isPaid => status == 'paid';
+  bool get isUnpaid => !isPaid;
 }
 
 class FinanceTransaction {
@@ -31,11 +48,9 @@ class FinanceTransaction {
   final int amountBaisa;
   final DateTime createdAt;
   final String note;
-  // Budget category id for expenses (food, shopping, …). Null if not set.
   final String? category;
 }
 
-/// Wallet totals are stored in baisa (1 OMR = 1000 baisa).
 class HomeFinanceData {
   const HomeFinanceData({
     required this.totalBalance,
@@ -53,7 +68,6 @@ class HomeFinanceData {
   final List<BillItem> bills;
   final List<FinanceTransaction> transactions;
 
-  /// Empty wallet for a user who has not added any records.
   factory HomeFinanceData.empty() => const HomeFinanceData(
         totalBalance: 0,
         totalExpense: 0,
@@ -63,33 +77,20 @@ class HomeFinanceData {
         transactions: [],
       );
 
-  /// Balance = income − expense − saving (available cash).
   factory HomeFinanceData.fromRecords({
     required List<FinanceTransaction> transactions,
     required List<BillItem> bills,
   }) {
-    var income = 0;
-    var expense = 0;
-    var saving = 0;
-    for (final tx in transactions) {
-      switch (tx.kind) {
-        case TransactionKind.income:
-          income += tx.amountBaisa;
-        case TransactionKind.expense:
-          expense += tx.amountBaisa;
-        case TransactionKind.saving:
-          saving += tx.amountBaisa;
-      }
-    }
+    final calc = FinanceCalculator.fromFinance(transactions);
     final sortedTx = [...transactions]
       ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
     final sortedBills = [...bills]
       ..sort((a, b) => a.dueDate.compareTo(b.dueDate));
     return HomeFinanceData(
-      totalIncome: income,
-      totalExpense: expense,
-      totalSaving: saving,
-      totalBalance: income - expense - saving,
+      totalIncome: calc.totalIncome,
+      totalExpense: calc.totalExpense,
+      totalSaving: calc.totalSaving,
+      totalBalance: calc.availableBalance,
       bills: sortedBills,
       transactions: sortedTx,
     );

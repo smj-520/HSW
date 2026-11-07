@@ -3,13 +3,17 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../core/budget_calculator.dart';
+import '../models/home_finance_data.dart';
 import '../services/app_i18n.dart';
-import '../utils/formatters.dart';
+import '../services/finance_repository.dart';
+import '../utils/app_messages.dart';
+import '../utils/budget_amount_helper.dart';
 import '../models/budget_models.dart';
 import '../services/budget_service.dart';
 import '../widgets/budget_widgets.dart';
+import 'add_transaction_screen.dart';
 
-// Add or Edit budget. If budget is null we are adding. If it is set we are editing.
 class AddBudgetScreen extends StatefulWidget {
   const AddBudgetScreen({super.key, this.budget});
 
@@ -26,6 +30,11 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
   String? selectedCategoryId;
   DateTime? selectedDate;
   bool isLoading = false;
+  bool attemptedSave = false;
+  int availableIncomeBaisaValue = 0;
+  bool hasIncome = true;
+  bool hasBalance = true;
+  String constraintHint = BudgetCalculator.limitedByIncomeMessage;
 
   bool get isEdit => widget.budget != null;
 
@@ -40,6 +49,40 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
       _note.text = old.note;
     }
     _amount.addListener(() => setState(() {}));
+    refreshAvailableIncome();
+  }
+
+  Future<void> refreshAvailableIncome() async {
+    final uid = sessionUid();
+    if (uid == null) return;
+    try {
+      final finance = await FinanceRepository().load(uid);
+      final list = await _budgetService.loadBudgetList(uid);
+      final calculator = BudgetCalculator.fromMonth(
+        transactions: finance.transactions,
+        budgets: list,
+        month: selectedDate ?? DateTime.now(),
+        ignoreBudgetId: isEdit ? null : widget.budget?.id,
+      );
+      if (!mounted) return;
+      setState(() {
+        hasIncome = calculator.hasIncome;
+        hasBalance = calculator.hasBalance;
+        availableIncomeBaisaValue = calculator.maxAllowedForCategory(
+          selectedCategoryId,
+        );
+        constraintHint = calculator.constraintLabelFor(selectedCategoryId);
+      });
+    } catch (_) {}
+  }
+
+  BudgetAmountFieldState amountFieldState() {
+    return budgetAmountFieldState(
+      raw: _amount.text,
+      availableIncomeBaisa: availableIncomeBaisaValue,
+      attemptedSave: attemptedSave,
+      constraintHint: constraintHint,
+    );
   }
 
   @override
@@ -49,17 +92,11 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
     super.dispose();
   }
 
-  // True when the amount box has a number bigger than 0.
-  bool amountIsValid() {
-    return parseOmrToBaisa(_amount.text) != null;
-  }
-
   String? sessionUid() {
     if (Firebase.apps.isEmpty) return null;
     return FirebaseAuth.instance.currentUser?.uid;
   }
 
-  // Opens the calendar. Date is optional.
   Future<void> pickDate() async {
     final picked = await showDatePicker(
       context: context,
@@ -67,13 +104,24 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
       firstDate: DateTime(2020),
       lastDate: DateTime.now().add(const Duration(days: 365 * 5)),
     );
-    if (picked != null) setState(() => selectedDate = picked);
+    if (picked != null) {
+      setState(() => selectedDate = picked);
+      await refreshAvailableIncome();
+    }
   }
 
-  // Saves overall budget or category budget, then goes back.
   Future<void> saveBudget() async {
-    final amountBaisa = parseOmrToBaisa(_amount.text);
-    if (amountBaisa == null) return;
+    setState(() => attemptedSave = true);
+    final field = amountFieldState();
+    if (!field.canSave || field.enteredBaisa == null) return;
+    final amountBaisa = field.enteredBaisa!;
+    if (isEdit && widget.budget != null) {
+      final spentWarn = _budgetService.budgetBelowSpentWarning(
+        current: widget.budget!,
+        newAmountBaisa: amountBaisa,
+      );
+      if (spentWarn != null) _showSnack(spentWarn);
+    }
     final uid = sessionUid();
     if (uid == null) {
       _showSnack(AppI18n.t(context, en: 'You must be signed in.', ar: 'يجب تسجيل الدخول.'));
@@ -86,25 +134,27 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
       final category = selectedCategoryId;
       final note = _note.text.trim();
 
+      String? saveError;
       if (category == null || category.isEmpty) {
-        await _saveOverall(
+        saveError = await _saveOverall(
           uid: uid,
           amountBaisa: amountBaisa,
           budgetList: budgetList,
           note: note,
         );
       } else {
-        final ok = await _saveCategory(
+        saveError = await _saveCategory(
           uid: uid,
           amountBaisa: amountBaisa,
           category: category,
           budgetList: budgetList,
           note: note,
         );
-        if (!ok) {
-          if (mounted) setState(() => isLoading = false);
-          return;
-        }
+      }
+      if (saveError != null) {
+        if (mounted) setState(() => isLoading = false);
+        _showSnack(saveError);
+        return;
       }
 
       if (!mounted) return;
@@ -122,16 +172,18 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
     }
   }
 
-  // No category = one overall limit. If it exists we update it.
-  Future<void> _saveOverall({
+  Future<String?> _saveOverall({
     required String uid,
     required int amountBaisa,
     required List<BudgetModel> budgetList,
     required String note,
   }) async {
-    final existing = _budgetService.findOverall(budgetList);
+    final existing = _budgetService.findOverall(
+      budgetList,
+      periodDate: selectedDate ?? DateTime.now(),
+    );
     if (isEdit && widget.budget != null) {
-      await _budgetService.updateBudget(
+      return _budgetService.updateBudget(
         uid: uid,
         id: widget.budget!.id,
         amountBaisa: amountBaisa,
@@ -139,10 +191,9 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
         date: selectedDate,
         note: note,
       );
-      return;
     }
     if (existing != null) {
-      await _budgetService.updateBudget(
+      return _budgetService.updateBudget(
         uid: uid,
         id: existing.id,
         amountBaisa: amountBaisa,
@@ -150,9 +201,8 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
         date: selectedDate,
         note: note,
       );
-      return;
     }
-    await _budgetService.addBudget(
+    return _budgetService.addBudget(
       uid: uid,
       amountBaisa: amountBaisa,
       category: null,
@@ -161,8 +211,7 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
     );
   }
 
-  // Category budget. Blocks two budgets for the same category. Warns if sum is too big.
-  Future<bool> _saveCategory({
+  Future<String?> _saveCategory({
     required String uid,
     required int amountBaisa,
     required String category,
@@ -174,14 +223,24 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
       budgetList: budgetList,
       category: category,
       ignoreBudgetId: ignoreId,
+      periodDate: selectedDate ?? DateTime.now(),
     );
     if (taken) {
-      _showSnack('This category already has a budget. Please edit it.');
-      return false;
+      return AppMessages.budgetExistsForCategory;
+    }
+    final exceed = _budgetService.categoryExceedsOverallWarning(
+      budgetList: budgetList,
+      amountBaisa: amountBaisa,
+      category: category,
+      ignoreBudgetId: ignoreId,
+      periodDate: selectedDate ?? DateTime.now(),
+    );
+    if (exceed != null) {
+      _showSnack(exceed);
     }
 
     if (isEdit && widget.budget != null) {
-      await _budgetService.updateBudget(
+      return _budgetService.updateBudget(
         uid: uid,
         id: widget.budget!.id,
         amountBaisa: amountBaisa,
@@ -189,30 +248,14 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
         date: selectedDate,
         note: note,
       );
-    } else {
-      await _budgetService.addBudget(
-        uid: uid,
-        amountBaisa: amountBaisa,
-        category: category,
-        date: selectedDate,
-        note: note,
-      );
     }
-
-    final overall = _budgetService.findOverall(budgetList);
-    if (overall != null) {
-      var categorySum = _budgetService.sumCategoryBudgets(
-        budgetList,
-        ignoreBudgetId: ignoreId,
-      );
-      categorySum += amountBaisa;
-      if (categorySum > overall.amountBaisa && mounted) {
-        _showSnack(
-          'Warning: category budgets added together are more than the overall budget.',
-        );
-      }
-    }
-    return true;
+    return _budgetService.addBudget(
+      uid: uid,
+      amountBaisa: amountBaisa,
+      category: category,
+      date: selectedDate,
+      note: note,
+    );
   }
 
   void _showSnack(String text) {
@@ -233,6 +276,8 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
     required Color accent,
     String? hint,
     String? helper,
+    String? error,
+    Color? helperColor,
     Widget? prefix,
     String? counter,
   }) {
@@ -246,9 +291,20 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
       filled: true,
       fillColor: Theme.of(context).cardColor,
       hintText: hint,
-      helperText: helper,
-      helperMaxLines: 2,
-      helperStyle: TextStyle(color: _muted, fontSize: helperSize, height: 1.35),
+      helperText: error == null ? helper : null,
+      helperMaxLines: 4,
+      helperStyle: TextStyle(
+        color: helperColor ?? _muted,
+        fontSize: helperSize,
+        height: 1.35,
+      ),
+      errorText: error,
+      errorMaxLines: 3,
+      errorStyle: TextStyle(
+        color: const Color(0xFFE74C3C),
+        fontSize: helperSize,
+        height: 1.35,
+      ),
       prefixIcon: prefix,
       prefixIconColor: accent,
       counterText: counter,
@@ -271,6 +327,14 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
         borderRadius: radius,
         borderSide: BorderSide(color: accent, width: 1.8),
       ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: radius,
+        borderSide: const BorderSide(color: Color(0xFFE74C3C)),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: radius,
+        borderSide: const BorderSide(color: Color(0xFFE74C3C), width: 1.8),
+      ),
     );
   }
 
@@ -279,6 +343,7 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
     required IconData icon,
     required Color color,
     required bool tablet,
+    bool requiredMark = false,
   }) {
     final box = tablet ? 40.0 : 36.0;
     return Padding(
@@ -296,12 +361,24 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
           ),
           const SizedBox(width: 10),
           Expanded(
-            child: Text(
-              text,
-              style: TextStyle(
-                fontWeight: FontWeight.w800,
-                fontSize: tablet ? 18 : 16,
-                color: Theme.of(context).colorScheme.onSurface,
+            child: Text.rich(
+              TextSpan(
+                text: text,
+                style: TextStyle(
+                  fontWeight: FontWeight.w800,
+                  fontSize: tablet ? 18 : 16,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+                children: [
+                  if (requiredMark)
+                    const TextSpan(
+                      text: ' *',
+                      style: TextStyle(
+                        color: Color(0xFFE74C3C),
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                ],
               ),
             ),
           ),
@@ -329,7 +406,8 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final canSave = amountIsValid() && !isLoading;
+    final amountUi = amountFieldState();
+    final canSave = amountUi.canSave && !isLoading;
     final size = MediaQuery.sizeOf(context);
     final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
     final tablet = size.width >= 700 || size.shortestSide >= 600;
@@ -337,6 +415,62 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
     final gap = tablet ? 28.0 : 20.0;
     final fieldFont = tablet ? 18.0 : 16.0;
     final buttonH = tablet ? 66.0 : 56.0;
+
+    if (!isEdit && (!hasIncome || !hasBalance) && !isLoading) {
+      final incomeBlocked = !hasIncome;
+      return Scaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        appBar: AppBar(
+          title: Text(
+            AppI18n.t(context, en: 'Add Budget', ar: 'إضافة ميزانية'),
+          ),
+        ),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  AppI18n.t(
+                    context,
+                    en: incomeBlocked
+                        ? BudgetCalculator.addIncomeFirstMessage
+                        : BudgetCalculator.addBalanceFirstMessage,
+                    ar: incomeBlocked
+                        ? 'أضف دخلك أولاً'
+                        : 'رصيدك الحالي 0. أضف دخلاً لزيادة الرصيد.',
+                  ),
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                ),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => const AddTransactionScreen(
+                          kind: TransactionKind.income,
+                        ),
+                      ),
+                    ).then((_) => refreshAvailableIncome());
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: _green,
+                    foregroundColor: Colors.white,
+                  ),
+                  child: Text(
+                    incomeBlocked
+                        ? AppI18n.t(context, en: 'Add income', ar: 'إضافة دخل')
+                        : AppI18n.t(context, en: 'Add balance', ar: 'إضافة رصيد'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -369,25 +503,53 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
               icon: Icons.payments_outlined,
               color: _green,
               tablet: tablet,
+              requiredMark: true,
             ),
             _tintWrap(
-              color: _green,
+              color: amountUi.helperIsError || amountUi.fieldError != null
+                  ? const Color(0xFFE74C3C)
+                  : _green,
               child: TextField(
                 controller: _amount,
                 enabled: !isLoading,
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                onChanged: (_) => setState(() {}),
                 style: TextStyle(fontSize: fieldFont, color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.w600),
                 decoration: fieldLook(
                   tablet: tablet,
-                  accent: _green,
+                  accent: amountUi.helperIsError || amountUi.fieldError != null
+                      ? const Color(0xFFE74C3C)
+                      : _green,
                   hint: AppI18n.t(context, en: 'Enter amount', ar: 'أدخل المبلغ'),
-                  helper: AppI18n.t(
-                    context,
-                    en: 'Enter the total budget amount',
-                    ar: 'أدخل إجمالي مبلغ الميزانية',
-                  ),
+                  error: amountUi.fieldError,
                   prefix: Icon(Icons.payments_outlined, size: tablet ? 26 : 22),
                 ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            if (amountUi.helperIsError && amountUi.constraintHint != null)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Text(
+                  amountUi.constraintHint!,
+                  style: TextStyle(
+                    color: const Color(0xFFE74C3C),
+                    fontSize: tablet ? 14 : 13,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            Text(
+              amountUi.helper,
+              style: TextStyle(
+                color: amountUi.helperIsError
+                    ? const Color(0xFFE74C3C)
+                    : _muted,
+                fontSize: tablet ? 14 : 13,
+                height: 1.35,
+                fontWeight: amountUi.helperIsError
+                    ? FontWeight.w700
+                    : FontWeight.w500,
               ),
             ),
             SizedBox(height: gap),
@@ -404,7 +566,10 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
                 selectedId: selectedCategoryId,
                 onChanged: isLoading
                     ? (id) {}
-                    : (id) => setState(() => selectedCategoryId = id),
+                    : (id) {
+                        setState(() => selectedCategoryId = id);
+                        refreshAvailableIncome();
+                      },
               ),
             ),
             SizedBox(height: gap),
@@ -487,8 +652,13 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
               child: SizedBox(
                 width: double.infinity,
                 height: buttonH,
-                child: ElevatedButton(
-                  onPressed: canSave ? saveBudget : null,
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: isLoading || canSave
+                      ? null
+                      : () => setState(() => attemptedSave = true),
+                  child: ElevatedButton(
+                  onPressed: canSave && !isLoading ? saveBudget : null,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: _green,
                     disabledBackgroundColor: const Color(0xFFB7E4C7),
@@ -515,6 +685,7 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
                             fontSize: tablet ? 19 : 16,
                           ),
                         ),
+                  ),
                 ),
               ),
             ),

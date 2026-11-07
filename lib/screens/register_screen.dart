@@ -13,7 +13,9 @@ import '../widgets/loading_overlay.dart';
 import '../widgets/primary_action_button.dart';
 import '../widgets/responsive_layout.dart';
 import '../widgets/styled_country_phone_field.dart';
+import '../services/otp_service.dart';
 import './login_screen.dart';
+import './otp_code_screen.dart';
 import './user_home_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -111,69 +113,84 @@ class _RegisterScreenState extends State<RegisterScreen> {
       );
       return;
     }
-//hashing...
+    final name = _name.text.trim();
+    final password = _password.text;
     setState(() => _loading = true);
     try {
-      final cred = await FirebaseAuth.instance.createUserWithEmailAndPassword(
+      await OtpService().sendCode(
         email: email,
-        password: _password.text,
+        purpose: OtpService.registerPurpose,
       );
-      final user = cred.user!;
-      await user.updateDisplayName(_name.text.trim());
-      try {
-        await _profileRepo.saveNewUserProfile(
-          uid: user.uid,
-          displayName: _name.text.trim(),
-          email: email,
-          phoneE164: e164,
-          countryIso: _countryIso.toUpperCase(),
-          role: 'user',
-        );
-      } catch (e) {
-        try {
-          await user.delete();
-        } catch (_) {}
-        if (!mounted) return;
-        setState(() => _loading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              AppI18n.t(
-                context,
-                en: 'Could not save profile: $e',
-                ar: 'تعذر حفظ الملف الشخصي: $e',
-              ),
+      if (!mounted) return;
+      setState(() => _loading = false);
+      await Navigator.of(context).push(
+        AppTransitions.fadeSlide(
+          OtpCodeScreen(
+            email: email,
+            purpose: OtpService.registerPurpose,
+            onVerified: (_) => _createFirebaseAccount(
+              email: email,
+              password: password,
+              name: name,
+              e164: e164,
             ),
           ),
-        );
-        return;
-      }
-      if (!mounted) return;
-      setState(() => _loading = false);
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (context) => const UserHomeScreen()),
-        (route) => false,
+          routeName: '/register/otp',
+        ),
       );
-    } on FirebaseAuthException catch (e) {
+    } on OtpException catch (e) {
       if (!mounted) return;
       setState(() => _loading = false);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(authErrorMessage(e))));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
     } catch (e) {
       if (!mounted) return;
       setState(() => _loading = false);
-      final user = FirebaseAuth.instance.currentUser;
-      if (user != null) {
-        Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (context) => const UserHomeScreen()),
-          (route) => false,
-        );
-        return;
-      }
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('$e')),
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
+    }
+  }
+
+  Future<void> _createFirebaseAccount({
+    required String email,
+    required String password,
+    required String name,
+    required String e164,
+  }) async {
+    try {
+    final cred = await FirebaseAuth.instance.createUserWithEmailAndPassword(
+      email: email,
+      password: password,
+    );
+    final user = cred.user!;
+    await user.updateDisplayName(name);
+    try {
+      await _profileRepo.saveNewUserProfile(
+        uid: user.uid,
+        displayName: name,
+        email: email,
+        phoneE164: e164,
+        countryIso: _countryIso.toUpperCase(),
+        role: 'user',
       );
+    } catch (e) {
+      try {
+        await user.delete();
+      } catch (_) {}
+      if (!mounted) return;
+      throw OtpException(
+        OtpError.sendFailed,
+        AppI18n.ts(
+          en: 'Could not save profile: $e',
+          ar: 'تعذر حفظ الملف الشخصي: $e',
+        ),
+      );
+    }
+    if (!mounted) return;
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (context) => const UserHomeScreen()),
+      (route) => false,
+    );
+    } on FirebaseAuthException catch (e) {
+      throw OtpException(OtpError.sendFailed, authErrorMessage(e));
     }
   }
 
@@ -183,8 +200,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
       loading: _loading,
       message: AppI18n.t(
         context,
-        en: 'Creating your account…',
-        ar: 'جارٍ إنشاء حسابك...',
+        en: 'Sending your 6-digit code…',
+        ar: 'جارٍ إرسال الرمز...',
       ),
       child: Scaffold(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,

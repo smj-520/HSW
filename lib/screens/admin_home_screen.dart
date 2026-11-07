@@ -5,6 +5,7 @@ import '../services/app_i18n.dart';
 import '../services/admin_services.dart';
 import '../widgets/admin_card.dart';
 import '../widgets/app_bottom_nav.dart';
+import '../widgets/blocked_account_guard.dart';
 import './admin_report_screen.dart';
 import './biller_screen.dart';
 import './feedback_screen.dart';
@@ -248,7 +249,8 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
       return IgnorePointer(child: Opacity(opacity: 0, child: chip));
     }
 
-    return Scaffold(
+    return BlockedAccountGuard(
+      child: Scaffold(
       backgroundColor: scheme.surface,
       appBar: AppBar(
         backgroundColor: scheme.surface,
@@ -273,6 +275,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
         currentIndex: currentIndex,
         onSelected: onTabTap,
       ),
+    ),
     );
   }
 }

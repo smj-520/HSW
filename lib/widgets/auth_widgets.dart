@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import '../services/app_i18n.dart';
 import '../theme/app_colors.dart';
 
-/// Branding block at the **top** of an auth [Form]: logo, then title + subtitle.
 class AuthFormFooterBranding extends StatelessWidget {
   const AuthFormFooterBranding({
     super.key,
@@ -73,7 +72,6 @@ class AuthFormFooterBranding extends StatelessWidget {
   }
 }
 
-/// Form wrapped in a clear card with border (auth flows).
 class AuthFormFrame extends StatelessWidget {
   const AuthFormFrame({super.key, required this.child});
 
@@ -109,7 +107,6 @@ class AuthFormFrame extends StatelessWidget {
   }
 }
 
-/// Tappable back control used when there is no [AppBar] (login / register).
 class RoundedBackButton extends StatelessWidget {
   const RoundedBackButton({super.key, this.onPressed, this.tooltip});
 

@@ -4,9 +4,9 @@ import '../services/app_i18n.dart';
 import '../widgets/responsive_layout.dart';
 import '../models/admin_models.dart';
 import '../services/admin_services.dart';
+import '../utils/admin_logic.dart';
 import '../widgets/admin_widgets.dart';
 
-// Admin page: search users, then block or unblock them.
 class UserScreen extends StatefulWidget {
   const UserScreen({super.key});
 
@@ -33,7 +33,6 @@ class _UserScreenState extends State<UserScreen> {
     super.dispose();
   }
 
-  // Downloads the user list from Firebase.
   Future<void> loadUsers() async {
     setState(() {
       isLoading = true;
@@ -55,17 +54,10 @@ class _UserScreenState extends State<UserScreen> {
     }
   }
 
-  // Keeps only users whose name or email contains the search text.
   List<UserModel> filteredList() {
-    final q = _search.text.trim().toLowerCase();
-    if (q.isEmpty) return userList;
-    return userList.where((user) {
-      return user.name.toLowerCase().contains(q) ||
-          user.email.toLowerCase().contains(q);
-    }).toList();
+    return filterUsersByName(userList, _search.text);
   }
 
-  // Asks "Are you sure?" then blocks or unblocks this user.
   Future<void> blockUser(UserModel user) async {
     final willBlock = !user.isBlocked;
     final ok = await ConfirmDialog.show(
@@ -78,6 +70,24 @@ class _UserScreenState extends State<UserScreen> {
     try {
       await _userService.setBlocked(uid: user.uid, blocked: willBlock);
       await loadUsers();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            willBlock
+                ? AppI18n.t(
+                    context,
+                    en: AdminMessages.userBlocked,
+                    ar: 'تم حظر المستخدم.',
+                  )
+                : AppI18n.t(
+                    context,
+                    en: AdminMessages.userUnblocked,
+                    ar: 'تم إلغاء الحظر.',
+                  ),
+          ),
+        ),
+      );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -113,7 +123,7 @@ class _UserScreenState extends State<UserScreen> {
           child: TextField(
             controller: _search,
             decoration: InputDecoration(
-              hintText: AppI18n.t(context, en: 'Search name or email', ar: 'ابحث بالاسم أو البريد'),
+              hintText: AppI18n.t(context, en: 'Search by name', ar: 'ابحث بالاسم'),
               prefixIcon: const Icon(Icons.search),
             ),
             onChanged: (_) => setState(() {}),
@@ -145,7 +155,6 @@ class _UserScreenState extends State<UserScreen> {
   }
 }
 
-// One row: name, email, Active/Blocked, and a Block or Unblock button.
 class _UserTile extends StatelessWidget {
   const _UserTile({required this.user, required this.onBlockTap});
 
@@ -172,6 +181,10 @@ class _UserTile extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(user.email, style: const TextStyle(color: Colors.grey)),
+                  if (user.phone.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Text(user.phone, style: const TextStyle(color: Colors.grey)),
+                  ],
                   const SizedBox(height: 4),
                   Text(
                     user.isBlocked

@@ -10,5 +10,7 @@ void main() {
     expect(parseOmrToBaisa('500'), 500000);
     expect(parseOmrToBaisa('500.000'), 500000);
     expect(formatOmr(500000, sign: OmrSign.plus), '+500.000 OMR');
+    expect(formatOmr(-240000), '-240.000 OMR');
+    expect(formatOmr(240000), '240.000 OMR');
   });
 }

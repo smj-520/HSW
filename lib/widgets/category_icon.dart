@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
+import '../constants/categories.dart';
 import '../constants/category_icons.dart';
 
 String colorToHex(Color color) {
@@ -12,35 +13,9 @@ Color categoryTileColor(String? categoryId) {
   if (categoryId == null || categoryId.isEmpty) {
     return const Color(0xFF27AE60);
   }
-  switch (categoryIconKey(categoryId)) {
-    case 'hostel_fees':
-      return const Color(0xFF5B8DEF);
-    case 'mess_food':
-      return const Color(0xFFE07A5F);
-    case 'laundry':
-      return const Color(0xFF7ECAA0);
-    case 'transport':
-      return const Color(0xFF7B8CDE);
-    case 'study':
-      return const Color(0xFF7E57C2);
-    case 'mobile':
-      return const Color(0xFF5DA9E9);
-    case 'health':
-      return const Color(0xFFE07A9A);
-    case 'personal_care':
-      return const Color(0xFF86C5D8);
-    case 'entertainment':
-      return const Color(0xFFE6B325);
-    case 'gifts_family':
-      return const Color(0xFFE8A0BF);
-    case 'groceries':
-      return const Color(0xFFD46A6A);
-    case 'emergency':
-      return const Color(0xFFF4C430);
-    default:
-      assert(false, 'No tile color for category id: $categoryId');
-      throw StateError('No tile color for category id: $categoryId');
-  }
+  final cat = expenseCategoryById(categoryIconKey(categoryId));
+  assert(cat != null, 'No tile color for category id: $categoryId');
+  return cat?.color ?? const Color(0xFFF2672D);
 }
 
 class CategoryIcon extends StatelessWidget {

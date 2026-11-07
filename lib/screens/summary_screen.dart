@@ -18,7 +18,6 @@ const _barColors = [
   Color(0xFFE67E22),
 ];
 
-// Summary: same weekly/monthly math as Report, using FinanceReportService.
 class SummaryScreen extends StatefulWidget {
   const SummaryScreen({super.key, this.onDone});
 

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-/// Full-width primary button with optional loading state.
 class PrimaryActionButton extends StatelessWidget {
   const PrimaryActionButton({
     super.key,
@@ -14,7 +13,6 @@ class PrimaryActionButton extends StatelessWidget {
   final VoidCallback? onPressed;
   final bool isLoading;
 
-  /// When false, the button only disables while [isLoading] (e.g. full-screen overlay handles spinner).
   final bool inlineProgress;
 
   @override
@@ -44,7 +42,6 @@ class PrimaryActionButton extends StatelessWidget {
   }
 }
 
-/// Outlined secondary action (e.g. back / cancel).
 class SecondaryActionButton extends StatelessWidget {
   const SecondaryActionButton({
     super.key,

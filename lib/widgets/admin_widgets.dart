@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../services/app_i18n.dart';
 
-// A simple Yes / No popup. Returns true if the user tapped Yes.
 class ConfirmDialog {
   static Future<bool> show(
     BuildContext context, {
@@ -17,7 +16,7 @@ class ConfirmDialog {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
-              child: Text(AppI18n.t(context, en: 'No', ar: 'لا')),
+              child: Text(AppI18n.t(context, en: 'Cancel', ar: 'إلغاء')),
             ),
             TextButton(
               onPressed: () => Navigator.of(context).pop(true),
@@ -31,7 +30,6 @@ class ConfirmDialog {
   }
 }
 
-// One small white box that shows a title and a number.
 class ReportSummaryCard extends StatelessWidget {
   const ReportSummaryCard({
     super.key,

@@ -1,19 +1,33 @@
-// One company the admin adds so users can pay bills.
 class BillerModel {
   const BillerModel({
     required this.id,
     required this.name,
     required this.category,
-    required this.accountNumber,
+    this.amountBaisa = 0,
+    this.userId,
+    this.addedBy,
+    this.source,
+    this.active = true,
   });
 
   final String id;
   final String name;
   final String category;
-  final String accountNumber;
+  final int amountBaisa;
+  final String? userId;
+  final String? addedBy;
+  final String? source;
+  final bool? active;
+
+  String get ownerUserId => (userId ?? '').trim();
+  String get addedByLabel => (addedBy ?? '').trim();
+  bool get isActive => active != false;
+  bool get isAdminBiller =>
+      ownerUserId.isEmpty ||
+      (source ?? '').toLowerCase() == 'admin' ||
+      addedByLabel.toLowerCase() == 'admin';
 }
 
-// One piece of feedback a user sent to the admin.
 class FeedbackModel {
   const FeedbackModel({
     required this.id,
@@ -32,7 +46,6 @@ class FeedbackModel {
   final DateTime createdAt;
 }
 
-// One payment a user made toward a biller (used in the admin report).
 class PaymentModel {
   const PaymentModel({
     required this.id,
@@ -51,12 +64,12 @@ class PaymentModel {
   final DateTime createdAt;
 }
 
-// One person from the users list in Firebase.
 class UserModel {
   const UserModel({
     required this.uid,
     required this.name,
     required this.email,
+    required this.phone,
     required this.role,
     required this.isBlocked,
   });
@@ -64,12 +77,11 @@ class UserModel {
   final String uid;
   final String name;
   final String email;
+  final String phone;
   final String role;
   final bool isBlocked;
 
-  // Short status text for the list.
   String get status => isBlocked ? 'Blocked' : 'Active';
 
-  // True when this account is an admin.
   bool get isAdmin => role.toLowerCase() == 'admin';
 }

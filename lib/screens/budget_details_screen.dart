@@ -10,7 +10,6 @@ import '../services/budget_service.dart';
 import '../widgets/category_icon.dart';
 import './add_budget_screen.dart';
 
-// Read-only page: limit, used, remaining, date, note, plus Edit and Delete.
 class BudgetDetailsScreen extends StatefulWidget {
   const BudgetDetailsScreen({super.key, required this.budget});
 
@@ -37,7 +36,6 @@ class _BudgetDetailsScreenState extends State<BudgetDetailsScreen> {
     return FirebaseAuth.instance.currentUser?.uid;
   }
 
-  // Reloads this budget so Used matches the latest expenses.
   Future<void> loadFresh() async {
     final uid = sessionUid();
     if (uid == null) {
@@ -62,7 +60,6 @@ class _BudgetDetailsScreenState extends State<BudgetDetailsScreen> {
     }
   }
 
-  // Opens the edit form, then reloads this page (does not close details).
   Future<void> openEdit() async {
     await Navigator.of(context).push(
       MaterialPageRoute(
@@ -72,7 +69,6 @@ class _BudgetDetailsScreenState extends State<BudgetDetailsScreen> {
     await loadFresh();
   }
 
-  // Asks first, then deletes and goes back to the Budget list.
   Future<void> deleteBudget() async {
     final ok = await showDialog<bool>(
       context: context,

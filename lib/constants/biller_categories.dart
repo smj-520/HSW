@@ -14,19 +14,18 @@ class BillerCategoryOption {
   final String ar;
 }
 
-/// Allowed biller expense types — same ids as the student expense wheel.
 const List<BillerCategoryOption> kBillerCategories = [
   BillerCategoryOption(id: 'hostel_fees', en: 'Hostel fees', ar: 'رسوم السكن'),
-  BillerCategoryOption(id: 'mess_food', en: 'Mess', ar: 'الطعام'),
-  BillerCategoryOption(id: 'laundry', en: 'Laundry', ar: 'غسيل'),
-  BillerCategoryOption(id: 'transport', en: 'Transport', ar: 'مواصلات'),
-  BillerCategoryOption(id: 'study', en: 'Study', ar: 'دراسة'),
-  BillerCategoryOption(id: 'mobile', en: 'Mobile', ar: 'جوال'),
-  BillerCategoryOption(id: 'health', en: 'Health', ar: 'صحة'),
-  BillerCategoryOption(id: 'personal_care', en: 'Personal care', ar: 'عناية شخصية'),
-  BillerCategoryOption(id: 'entertainment', en: 'Entertainment', ar: 'ترفيه'),
-  BillerCategoryOption(id: 'gifts_family', en: 'Gifts', ar: 'هدايا'),
-  BillerCategoryOption(id: 'groceries', en: 'Groceries', ar: 'بقالة'),
+  BillerCategoryOption(id: 'mess_food', en: 'Mess & food', ar: 'الأكل والكافتيريا'),
+  BillerCategoryOption(id: 'laundry', en: 'Laundry', ar: 'المغسلة'),
+  BillerCategoryOption(id: 'transport', en: 'Transport (bus + taxi)', ar: 'المواصلات'),
+  BillerCategoryOption(id: 'study', en: 'Study & printing', ar: 'القرطاسية والطباعة'),
+  BillerCategoryOption(id: 'mobile', en: 'Mobile & internet', ar: 'الرصيد والإنترنت'),
+  BillerCategoryOption(id: 'health', en: 'Health', ar: 'الصحة'),
+  BillerCategoryOption(id: 'personal_care', en: 'Personal care', ar: 'العناية الشخصية'),
+  BillerCategoryOption(id: 'entertainment', en: 'Entertainment', ar: 'الترفيه'),
+  BillerCategoryOption(id: 'gifts_family', en: 'Gifts & family', ar: 'الهدايا والعائلة'),
+  BillerCategoryOption(id: 'groceries', en: 'Groceries (room supplies)', ar: 'مقاضي الغرفة'),
   BillerCategoryOption(id: 'emergency', en: 'Emergency', ar: 'طوارئ'),
 ];
 
@@ -64,7 +63,7 @@ String? resolveBillerCategoryId(String? raw) {
 String? validateBillerFields({
   required String name,
   required String? category,
-  required String accountNumber,
+  int? amountBaisa,
 }) {
   if (name.trim().isEmpty) return 'Name is required';
   if (category == null || category.trim().isEmpty) {
@@ -73,8 +72,35 @@ String? validateBillerFields({
   if (!isAllowedBillerCategory(category)) {
     return 'Select a valid category';
   }
-  if (accountNumber.trim().isEmpty) return 'Account number is required';
   return null;
+}
+
+String formatBillerOmrCap(int amountBaisa) {
+  if (amountBaisa % 1000 == 0) {
+    return (amountBaisa / 1000).toStringAsFixed(0);
+  }
+  return (amountBaisa / 1000).toStringAsFixed(3);
+}
+
+String billerCapExceededMessage(int maxBaisa) {
+  return 'Amount cannot exceed ${formatBillerOmrCap(maxBaisa)} OMR for this biller';
+}
+
+bool exceedsBillerCap({required int amountBaisa, required int capBaisa}) {
+  if (capBaisa <= 0 || amountBaisa <= 0) return false;
+  if (amountBaisa <= capBaisa) return false;
+  if (capBaisa < 1000 && amountBaisa <= capBaisa * 1000) return false;
+  return true;
+}
+
+int displayBillerCapBaisa({required int amountBaisa, required int capBaisa}) {
+  if (capBaisa <= 0) return amountBaisa;
+  if (amountBaisa <= capBaisa) return capBaisa;
+  if (capBaisa < 1000 && amountBaisa <= capBaisa * 1000) {
+    return capBaisa * 1000;
+  }
+  if (capBaisa < 1000) return capBaisa * 1000;
+  return capBaisa;
 }
 
 String localizedBillerCategory(BuildContext context, String? raw) {

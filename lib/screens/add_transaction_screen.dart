@@ -1,16 +1,24 @@
+import 'dart:async';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 
+import '../constants/biller_categories.dart';
 import '../models/admin_models.dart';
 import '../services/admin_services.dart';
 import '../models/budget_models.dart';
 import '../widgets/budget_widgets.dart';
+import '../core/budget_calculator.dart';
+import '../core/money.dart';
 import '../models/home_finance_data.dart';
 import '../services/app_i18n.dart';
+import '../services/budget_service.dart';
 import '../services/finance_repository.dart';
 import '../theme/app_colors.dart';
+import '../utils/amount_validator.dart';
 import '../utils/formatters.dart';
+import '../utils/wallet_tc_logic.dart';
 import '../widgets/home_widgets.dart';
 import '../widgets/primary_action_button.dart';
 import '../widgets/responsive_layout.dart';
@@ -21,9 +29,18 @@ String? _sessionUid() {
 }
 
 class AddTransactionScreen extends StatefulWidget {
-  const AddTransactionScreen({super.key, required this.kind});
+  const AddTransactionScreen({
+    super.key,
+    required this.kind,
+    this.existingId,
+    this.existingAmountBaisa,
+    this.existingNote,
+  });
 
   final TransactionKind kind;
+  final String? existingId;
+  final int? existingAmountBaisa;
+  final String? existingNote;
 
   @override
   State<AddTransactionScreen> createState() => _AddTransactionScreenState();
@@ -37,29 +54,47 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   List<BillerModel> billerList = [];
   String? selectedBillerId;
   String? selectedBudgetCategory;
+  StreamSubscription<List<BillerModel>>? _billerSub;
 
   @override
   void initState() {
     super.initState();
+    if (widget.existingAmountBaisa != null && widget.existingAmountBaisa! > 0) {
+      _amount.text = Money.baisaToOmr(widget.existingAmountBaisa!);
+    }
+    if (widget.existingNote != null) {
+      _note.text = widget.existingNote!;
+    }
     if (widget.kind == TransactionKind.expense) {
-      loadBillers();
+      _billerSub = BillerService().watchBillerList().listen(
+        (list) {
+          if (!mounted) return;
+          setState(() {
+            billerList = list;
+            if (selectedBillerId != null &&
+                !list.any((b) => b.id == selectedBillerId)) {
+              selectedBillerId = null;
+            }
+          });
+        },
+        onError: (_) {},
+      );
     }
   }
 
   @override
   void dispose() {
+    _billerSub?.cancel();
     _amount.dispose();
     _note.dispose();
     super.dispose();
   }
 
-  // Loads billers so an expense can be linked to one (this feeds the admin report).
-  Future<void> loadBillers() async {
-    try {
-      final list = await BillerService().loadBillerList();
-      if (!mounted) return;
-      setState(() => billerList = list);
-    } catch (_) {}
+  BillerModel? get _selectedBiller {
+    for (final biller in billerList) {
+      if (biller.id == selectedBillerId) return biller;
+    }
+    return null;
   }
 
   Color get _accent {
@@ -74,11 +109,12 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   }
 
   Future<void> _save() async {
-    final baisa = parseOmrToBaisa(_amount.text);
-    if (baisa == null) {
-      setState(() => _error = 'Enter an amount greater than 0');
+    final parsed = parseAmountField(_amount.text);
+    if (parsed.error != null) {
+      setState(() => _error = parsed.error);
       return;
     }
+    final baisa = parsed.baisa!;
     final uid = _sessionUid();
     if (uid == null) {
       setState(() => _error = 'You must be signed in to save');
@@ -89,28 +125,122 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       _error = null;
     });
     try {
-      await FinanceRepository().addTransaction(
-        uid: uid,
+      final wallet = await FinanceRepository().load(uid);
+      final moveError = moneyMoveError(
         kind: widget.kind,
         amountBaisa: baisa,
-        note: _note.text,
-        category: widget.kind == TransactionKind.expense
-            ? selectedBudgetCategory
-            : null,
+        balanceBaisa: wallet.totalBalance,
+        category: selectedBudgetCategory,
+        requireCategory: widget.kind == TransactionKind.expense,
       );
-      // If this expense is for a biller, also save a payment for the admin report.
-      if (widget.kind == TransactionKind.expense && selectedBillerId != null) {
-        String billerName = '';
-        for (final biller in billerList) {
-          if (biller.id == selectedBillerId) {
-            billerName = biller.name;
-            break;
-          }
+      if (moveError != null) {
+        if (!mounted) return;
+        setState(() {
+          _saving = false;
+          _error = moveError;
+        });
+        return;
+      }
+      final budgets = await BudgetService().loadBudgetList(uid);
+      final calc = BudgetCalculator.fromMonth(
+        transactions: wallet.transactions,
+        budgets: budgets,
+        month: DateTime.now(),
+      );
+      var newIncome = calc.income;
+      var newBalance = calc.totalBalance;
+      if (widget.kind == TransactionKind.income) {
+        final delta = widget.existingId == null
+            ? baisa
+            : baisa - (widget.existingAmountBaisa ?? 0);
+        newIncome += delta;
+        newBalance += delta;
+      } else {
+        newBalance -= baisa;
+      }
+      if (calc.needsConstraintWarning(
+        newMonthlyIncomeBaisa: newIncome,
+        newTotalBalanceBaisa: newBalance,
+      )) {
+        if (!mounted) return;
+        final overByIncome = calc.totalAllocated - newIncome;
+        final overByBalance = calc.totalRemainingBudget - newBalance;
+        var overBy = 0;
+        if (overByIncome > overBy) overBy = overByIncome;
+        if (overByBalance > overBy) overBy = overByBalance;
+        final ok = await showDialog<bool>(
+          context: context,
+          builder: (context) {
+            return AlertDialog(
+              title: Text(
+                AppI18n.t(
+                  context,
+                  en: 'This change would exceed your budgets',
+                  ar: 'هذا التغيير يتجاوز الميزانيات',
+                ),
+              ),
+              content: Text(BudgetCalculator.overAllocatedBanner(overBy)),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: Text(AppI18n.t(context, en: 'Cancel', ar: 'إلغاء')),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(true),
+                  child: Text(AppI18n.t(context, en: 'Save anyway', ar: 'حفظ على أي حال')),
+                ),
+              ],
+            );
+          },
+        );
+        if (ok != true) {
+          if (!mounted) return;
+          setState(() => _saving = false);
+          return;
         }
+      }
+      if (widget.kind == TransactionKind.expense && selectedBillerId != null) {
+        final latest = await BillerService().fetchBiller(selectedBillerId!);
+        final cap = latest?.amountBaisa ?? 0;
+        if (exceedsBillerCap(amountBaisa: baisa, capBaisa: cap)) {
+          if (!mounted) return;
+          setState(() {
+            _saving = false;
+            _error = billerCapExceededMessage(
+              displayBillerCapBaisa(amountBaisa: baisa, capBaisa: cap),
+            );
+          });
+          return;
+        }
+      }
+      if (widget.existingId != null) {
+        await FinanceRepository().updateTransaction(
+          uid: uid,
+          id: widget.existingId!,
+          kind: widget.kind,
+          amountBaisa: baisa,
+          note: _note.text,
+          category: widget.kind == TransactionKind.expense
+              ? selectedBudgetCategory
+              : null,
+        );
+      } else {
+        await FinanceRepository().addTransaction(
+          uid: uid,
+          kind: widget.kind,
+          amountBaisa: baisa,
+          note: _note.text,
+          category: widget.kind == TransactionKind.expense
+              ? selectedBudgetCategory
+              : null,
+        );
+      }
+      if (widget.kind == TransactionKind.expense && selectedBillerId != null) {
+        final latest = await BillerService().fetchBiller(selectedBillerId!);
         await ReportService().addPayment(
           uid: uid,
           billerId: selectedBillerId!,
-          billerName: billerName,
+          billerName: latest?.name ?? '',
           amountBaisa: baisa,
         );
       }
@@ -184,12 +314,29 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
               hint: Text(AppI18n.t(context, en: 'None', ar: 'بدون')),
               items: [
                 for (final biller in billerList)
-                  DropdownMenuItem(value: biller.id, child: Text(biller.name)),
+                  DropdownMenuItem(
+                    value: biller.id,
+                    child: Text(
+                      '${biller.name} (${formatOmr(biller.amountBaisa)})',
+                    ),
+                  ),
               ],
               onChanged: _saving
                   ? null
                   : (id) => setState(() => selectedBillerId = id),
             ),
+            if (_selectedBiller != null) ...[
+              const SizedBox(height: 8),
+              Text(
+                AppI18n.t(
+                  context,
+                  en:
+                      'Max ${_selectedBiller!.amountBaisa > 0 ? formatOmr(_selectedBiller!.amountBaisa) : '0.000 OMR'} for this biller',
+                  ar:
+                      'الحد ${_selectedBiller!.amountBaisa > 0 ? formatOmr(_selectedBiller!.amountBaisa) : '0.000 OMR'} لهذه الجهة',
+                ),
+              ),
+            ],
             const SizedBox(height: 16),
           ],
           TextField(
@@ -244,7 +391,6 @@ class _AddBillScreenState extends State<AddBillScreen> {
     super.dispose();
   }
 
-  // Loads the same biller list the admin manages, so users see new names.
   Future<void> loadBillers() async {
     try {
       final list = await BillerService().loadBillerList();
@@ -253,7 +399,6 @@ class _AddBillScreenState extends State<AddBillScreen> {
     } catch (_) {}
   }
 
-  // When the user picks a biller, we copy its name into the name box.
   void pickBiller(String? id) {
     setState(() => selectedBillerId = id);
     if (id == null) return;
@@ -634,20 +779,27 @@ class BillsListScreen extends StatelessWidget {
 }
 
 class NotificationsScreen extends StatelessWidget {
-  const NotificationsScreen({super.key, required this.bills, this.now});
+  const NotificationsScreen({
+    super.key,
+    required this.bills,
+    this.now,
+    this.budgetWarnings = const [],
+  });
 
   final List<BillItem> bills;
   final DateTime? now;
+  final List<String> budgetWarnings;
 
   @override
   Widget build(BuildContext context) {
+    final empty = bills.isEmpty && budgetWarnings.isEmpty;
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         title: const Text('Notifications'),
       ),
-      body: bills.isEmpty
+      body: empty
           ? Center(
               child: Text(
                 'No bills yet',
@@ -657,6 +809,11 @@ class NotificationsScreen extends StatelessWidget {
           : ListView(
               padding: const EdgeInsets.all(16),
               children: [
+                for (final warning in budgetWarnings)
+                  ListTile(
+                    leading: const Icon(Icons.warning_amber_rounded, color: Color(0xFFE24B4A)),
+                    title: Text(warning),
+                  ),
                 for (final bill in bills)
                   ListTile(
                     leading: const Icon(Icons.notifications_outlined),

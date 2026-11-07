@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-/// Theme-aware page, card, and text colors. Use instead of cream/white/black literals.
 abstract final class AppSurfaces {
   static bool isDark(BuildContext context) =>
       Theme.of(context).brightness == Brightness.dark;

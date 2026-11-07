@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../constants/biller_categories.dart';
 import '../models/bill_model.dart';
 import '../services/app_i18n.dart';
 import '../utils/formatters.dart';
 
-// White rounded search box. Filters bills by name as the user types.
 class SearchBox extends StatelessWidget {
   const SearchBox({
     super.key,
@@ -45,7 +45,6 @@ class SearchBox extends StatelessWidget {
   }
 }
 
-// One paid bill card: name, paid date, amount in green, Paid check.
 class PaidBillCard extends StatelessWidget {
   const PaidBillCard({super.key, required this.bill});
 
@@ -119,7 +118,6 @@ class PaidBillCard extends StatelessWidget {
   }
 }
 
-// One unpaid bill card: name, due date, amount in red, Mark Paid button.
 class UnpaidBillCard extends StatelessWidget {
   const UnpaidBillCard({
     super.key,
@@ -165,6 +163,13 @@ class UnpaidBillCard extends StatelessWidget {
                   '${AppI18n.t(context, en: 'Due', ar: 'الاستحقاق')}: ${DateFormat('d MMM', AppI18n.isArabic(context) ? 'ar' : 'en').format(bill.dueDate)}',
                   style: const TextStyle(color: Colors.grey, fontSize: 13),
                 ),
+                if ((bill.category ?? '').trim().isNotEmpty) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    localizedBillerCategory(context, bill.category),
+                    style: const TextStyle(color: Colors.grey, fontSize: 13),
+                  ),
+                ],
                 const SizedBox(height: 6),
                 Text(
                   formatOmr(bill.amountBaisa),

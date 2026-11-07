@@ -1,25 +1,10 @@
 import 'package:firebase_database/firebase_database.dart';
 
+import '../constants/categories.dart';
+import '../core/finance_calculator.dart';
+import '../core/transaction_validator.dart';
 import '../models/home_finance_data.dart';
 
-/// Realtime Database: `finance/{uid}/transactions` and `finance/{uid}/bills`.
-///
-/// No records are created at registration. A new user has no node (or empty
-/// maps) until they add income, expense, saving, or a bill.
-///
-/// Example rules:
-/// ```json
-/// {
-///   "rules": {
-///     "finance": {
-///       "$uid": {
-///         ".read": "$uid === auth.uid",
-///         ".write": "$uid === auth.uid"
-///       }
-///     }
-///   }
-/// }
-/// ```
 class FinanceRepository {
   FinanceRepository({FirebaseDatabase? database})
       : _root = (database ?? FirebaseDatabase.instance).ref('finance');
@@ -43,17 +28,38 @@ class FinanceRepository {
     required int amountBaisa,
     String note = '',
     String? category,
+    DateTime? date,
+    String? billerId,
   }) async {
+    if (amountBaisa <= 0) {
+      throw ArgumentError('Enter an amount greater than 0');
+    }
+    final current = await load(uid);
+    final check = TransactionValidator(
+      FinanceCalculator.fromFinance(current.transactions),
+    ).validateAdd(
+      kind: kind.name,
+      amountBaisa: amountBaisa,
+      category: category,
+    );
+    if (!check.ok) {
+      throw ArgumentError(check.message);
+    }
+    final when = date ?? DateTime.now();
     final row = <String, Object>{
       'kind': kind.name,
       'amountBaisa': amountBaisa,
       'note': note.trim(),
-      'createdAt': DateTime.now().toUtc().toIso8601String(),
+      'createdAt': when.toUtc().toIso8601String(),
     };
-    // Only expenses keep a budget category. Old expenses with no category still work.
     final cat = category?.trim();
     if (kind == TransactionKind.expense && cat != null && cat.isNotEmpty) {
       row['category'] = cat;
+    }
+    final biller = billerId?.trim() ?? '';
+    if (biller.isNotEmpty) {
+      row['billerId'] = biller;
+      row['userId'] = uid;
     }
     final ref = _root.child(uid).child('transactions').push();
     await ref.set(row);
@@ -63,8 +69,90 @@ class FinanceRepository {
   Future<void> deleteTransaction({
     required String uid,
     required String id,
+  }) async {
+    final current = await load(uid);
+    CalcTx? old;
+    for (final tx in current.transactions) {
+      if (tx.id == id) {
+        old = CalcTx.fromFinance(tx);
+        break;
+      }
+    }
+    if (old != null) {
+      final check = TransactionValidator(
+        FinanceCalculator.fromFinance(current.transactions),
+      ).validateDelete(old);
+      if (!check.ok) {
+        throw ArgumentError(check.message);
+      }
+    }
+    await _root.child(uid).child('transactions').child(id).remove();
+  }
+
+  Future<void> updateTransaction({
+    required String uid,
+    required String id,
+    required TransactionKind kind,
+    required int amountBaisa,
+    String note = '',
+    String? category,
   }) {
-    return _root.child(uid).child('transactions').child(id).remove();
+    if (amountBaisa <= 0) {
+      return Future.error(ArgumentError('Enter an amount greater than 0'));
+    }
+    return load(uid).then((current) {
+      CalcTx? old;
+      for (final tx in current.transactions) {
+        if (tx.id == id) {
+          old = CalcTx.fromFinance(tx);
+          break;
+        }
+      }
+      final validator = TransactionValidator(
+        FinanceCalculator.fromFinance(current.transactions),
+      );
+      final check = old == null
+          ? validator.validateAdd(kind: kind.name, amountBaisa: amountBaisa, category: category)
+          : validator.validateEdit(
+              old: old,
+              kind: kind.name,
+              amountBaisa: amountBaisa,
+              category: category,
+            );
+      if (!check.ok) {
+        return Future<void>.error(ArgumentError(check.message));
+      }
+      return _writeUpdate(
+        uid: uid,
+        id: id,
+        kind: kind,
+        amountBaisa: amountBaisa,
+        note: note,
+        category: category,
+      );
+    });
+  }
+
+  Future<void> _writeUpdate({
+    required String uid,
+    required String id,
+    required TransactionKind kind,
+    required int amountBaisa,
+    String note = '',
+    String? category,
+  }) {
+    final row = <String, Object?>{
+      'kind': kind.name,
+      'amountBaisa': amountBaisa,
+      'note': note.trim(),
+    };
+    final cat = category?.trim();
+    if (kind == TransactionKind.expense && cat != null && cat.isNotEmpty) {
+      row['category'] = cat;
+    } else {
+      row['category'] = null;
+    }
+    return _root.child(uid).child('transactions').child(id).update(row);
   }
 
   Future<void> addBill({
@@ -92,7 +180,7 @@ class FinanceRepository {
     for (final entry in txMap.entries) {
       final row = _asMap(entry.value);
       final kind = transactionKindFromStorage(row['kind']?.toString());
-      final amount = _asInt(row['amountBaisa']);
+      final amount = _asInt(row['amountBaisa'] ?? row['amount']);
       if (kind == null || amount <= 0) continue;
       final category = row['category']?.toString().trim();
       transactions.add(
@@ -102,8 +190,11 @@ class FinanceRepository {
           amountBaisa: amount,
           note: row['note']?.toString() ?? '',
           createdAt: DateTime.tryParse(row['createdAt']?.toString() ?? '') ??
+              DateTime.tryParse(row['date']?.toString() ?? '') ??
               DateTime.fromMillisecondsSinceEpoch(0),
-          category: (category == null || category.isEmpty) ? null : category,
+          category: kind == TransactionKind.expense
+              ? normalizeExpenseCategoryId(category)
+              : ((category == null || category.isEmpty) ? null : category),
         ),
       );
     }
@@ -116,12 +207,21 @@ class FinanceRepository {
       if (name.isEmpty) continue;
       final due = DateTime.tryParse(row['dueDate']?.toString() ?? '');
       if (due == null) continue;
+      final status = row['status']?.toString().trim().toLowerCase() ?? 'unpaid';
       bills.add(
         BillItem(
           id: entry.key,
           name: name,
           dueDate: due,
           kind: billKindFromStorage(row['kind']?.toString()),
+          amountBaisa: _asInt(row['amountBaisa']),
+          status: status == 'paid' ? 'paid' : 'unpaid',
+          category: normalizeExpenseCategoryId(
+            row['category']?.toString() ?? row['kind']?.toString(),
+          ),
+          userId: row['userId']?.toString() ?? '',
+          billerId: (row['billerId'] as String?)?.trim(),
+          note: row['note']?.toString() ?? '',
         ),
       );
     }
@@ -142,6 +242,8 @@ class FinanceRepository {
   static int _asInt(Object? value) {
     if (value is int) return value;
     if (value is num) return value.round();
-    return int.tryParse(value?.toString() ?? '') ?? 0;
+    final raw = value?.toString().trim() ?? '';
+    if (raw.isEmpty) return 0;
+    return int.tryParse(raw) ?? double.tryParse(raw)?.round() ?? 0;
   }
 }

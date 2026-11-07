@@ -8,9 +8,10 @@ import '../services/app_settings_controller.dart';
 import '../models/transaction_model.dart';
 import '../services/transaction_service.dart';
 import '../widgets/responsive_layout.dart';
+import '../models/home_finance_data.dart';
 import '../widgets/transaction_widgets.dart';
+import 'add_transaction_screen.dart';
 
-// Transaction tab: All / Income / Expense / Saving, grouped by month.
 class TransactionScreen extends StatefulWidget {
   const TransactionScreen({super.key});
 
@@ -47,7 +48,6 @@ class _TransactionScreenState extends State<TransactionScreen>
     return FirebaseAuth.instance.currentUser?.uid;
   }
 
-  // Downloads this user's transactions. Newest already first from the service.
   Future<void> loadTransactions() async {
     final uid = sessionUid();
     if (uid == null) {
@@ -80,7 +80,6 @@ class _TransactionScreenState extends State<TransactionScreen>
     }
   }
 
-  // Keeps only the type for the selected tab. 0 = All.
   List<TransactionModel> filteredList() {
     if (tabController.index == 0) return transactionList;
     final wanted = ['all', 'income', 'expense', 'saving'][tabController.index];
@@ -91,7 +90,6 @@ class _TransactionScreenState extends State<TransactionScreen>
     return list;
   }
 
-  // Groups rows by year-month, newest month first.
   List<_MonthGroup> groupByMonth(List<TransactionModel> rows) {
     final groups = <String, _MonthGroup>{};
     final order = <String>[];
@@ -225,7 +223,24 @@ class _TransactionScreenState extends State<TransactionScreen>
             child: Column(
               children: [
                 for (var i = 0; i < month.rows.length; i++) ...[
-                  TransactionRow(transaction: month.rows[i]),
+                  InkWell(
+                    onTap: month.rows[i].isIncome
+                        ? () async {
+                            await Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (context) => AddTransactionScreen(
+                                  kind: TransactionKind.income,
+                                  existingId: month.rows[i].id,
+                                  existingAmountBaisa: month.rows[i].amountBaisa,
+                                  existingNote: month.rows[i].title,
+                                ),
+                              ),
+                            );
+                            await loadTransactions();
+                          }
+                        : null,
+                    child: TransactionRow(transaction: month.rows[i]),
+                  ),
                   if (i < month.rows.length - 1)
                     const Divider(height: 1, color: Color(0xFFE8E8E8)),
                 ],

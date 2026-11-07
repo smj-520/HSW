@@ -1,3 +1,5 @@
+import 'categories.dart';
+
 const String _hostelFees =
     '<svg viewBox="0 0 24 24"><path d="M12 3L21 11V21H3V11Z" fill="#fff"/><rect x="10" y="14" width="4" height="7" rx="1" fill="{{C}}"/><rect x="5.5" y="12" width="2.5" height="2.5" rx=".6" fill="{{C}}"/><rect x="16" y="12" width="2.5" height="2.5" rx=".6" fill="{{C}}"/></svg>';
 
@@ -34,7 +36,6 @@ const String _groceries =
 const String _emergency =
     '<svg viewBox="0 0 24 24"><path d="M6 18V12a6 6 0 0 1 12 0V18Z" fill="#fff"/><rect x="4" y="18" width="16" height="3" rx="1.2" fill="#fff"/><path d="M9.5 12a2.5 2.5 0 0 1 2.5-2.5" stroke="{{C}}" stroke-width="1.6" fill="none" stroke-linecap="round"/><path d="M12 2v2M4.5 5l1.5 1.5M19.5 5L18 6.5" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/></svg>';
 
-/// One unique SVG glyph per canonical category id.
 const Map<String, String> kCategoryIconSvgs = {
   'hostel_fees': _hostelFees,
   'mess_food': _messFood,
@@ -50,40 +51,13 @@ const Map<String, String> kCategoryIconSvgs = {
   'emergency': _emergency,
 };
 
-/// Resolves a stored or budget id to the canonical icon-map key.
 String categoryIconKey(String categoryId) {
-  final id = categoryId.trim().toLowerCase();
-  if (kCategoryIconSvgs.containsKey(id)) return id;
-  switch (id) {
-    case 'house':
-    case 'home':
-      return 'hostel_fees';
-    case 'food':
-      return 'mess_food';
-    case 'clothes':
-      return 'laundry';
-    case 'car':
-    case 'taxi':
-      return 'transport';
-    case 'phone':
-    case 'wifi':
-      return 'mobile';
-    case 'toiletries':
-    case 'personal':
-      return 'personal_care';
-    case 'sports':
-      return 'entertainment';
-    case 'gifts':
-      return 'gifts_family';
-    case 'shopping':
-      return 'groceries';
-    case 'pets':
-    case 'others':
-      return 'emergency';
-    default:
-      assert(false, 'No icon for category id: $categoryId');
-      throw StateError('No icon for category id: $categoryId');
-  }
+  final key = normalizeExpenseCategoryId(categoryId);
+  assert(
+    kCategoryIconSvgs.containsKey(key),
+    'No icon for category id: $categoryId (key: $key)',
+  );
+  return key;
 }
 
 String categoryIconSvg(String categoryId) {

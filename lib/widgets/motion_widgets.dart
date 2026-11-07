@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
-/// One-shot fade + slight slide-up, with optional stagger by [index] (lists / grids).
 class AnimatedAppear extends StatefulWidget {
   const AnimatedAppear({
     super.key,
@@ -68,7 +67,6 @@ class _AnimatedAppearState extends State<AnimatedAppear>
   }
 }
 
-/// Subtle fade + slide-in when a screen appears.
 class AnimatedPageContent extends StatefulWidget {
   const AnimatedPageContent({
     super.key,
@@ -119,7 +117,6 @@ class _AnimatedPageContentState extends State<AnimatedPageContent>
   }
 }
 
-/// Very subtle breathing scale — reads as polish, not distraction.
 class GentlePulse extends StatefulWidget {
   const GentlePulse({super.key, required this.child});
 

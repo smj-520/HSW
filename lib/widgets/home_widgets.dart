@@ -1,11 +1,16 @@
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart' show DateFormat;
 
+import '../constants/categories.dart';
 import '../models/home_finance_data.dart';
 import '../services/app_i18n.dart';
 import '../theme/app_colors.dart';
+import '../utils/app_messages.dart';
 import '../utils/formatters.dart';
+import '../utils/wallet_tc_logic.dart';
+import 'category_icon.dart';
 
-/// Cash / wallet illustration used on the balance card.
 class WalletIllustration extends StatelessWidget {
   const WalletIllustration({super.key, this.size = 92});
 
@@ -87,17 +92,10 @@ class BalanceCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(20, 18, 12, 18),
+      padding: const EdgeInsets.fromLTRB(16, 18, 16, 18),
       decoration: BoxDecoration(
-        color: AppColors.homePrimary,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.homePrimary.withValues(alpha: 0.28),
-            blurRadius: 18,
-            offset: const Offset(0, 8),
-          ),
-        ],
+        color: const Color(0xFF1E3A32),
+        borderRadius: BorderRadius.circular(22),
       ),
       child: Row(
         children: [
@@ -106,28 +104,116 @@ class BalanceCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  AppI18n.t(context, en: 'total balance', ar: 'الرصيد الإجمالي'),
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.78),
-                    fontSize: 13,
+                  AppI18n.t(context, en: 'Total balance', ar: 'الرصيد الإجمالي'),
+                  style: const TextStyle(
+                    color: Color(0xFF9FD3B2),
+                    fontSize: 12,
                     fontWeight: FontWeight.w500,
-                    letterSpacing: 0.2,
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 6),
                 Text(
                   formatOmr(totalBalance),
-                  style: TextStyle(
+                  style: const TextStyle(
                     color: Colors.white,
-                    fontSize: 28,
-                    fontWeight: FontWeight.w800,
+                    fontSize: 26,
+                    fontWeight: FontWeight.w500,
                     height: 1.15,
                   ),
                 ),
               ],
             ),
           ),
-          const WalletIllustration(size: 88),
+          Container(
+            width: 52,
+            height: 52,
+            decoration: BoxDecoration(
+              color: const Color(0xFF4CAF70),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            padding: const EdgeInsets.all(6),
+            child: const WalletIllustration(size: 40),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class OverviewStrip extends StatelessWidget {
+  const OverviewStrip({
+    super.key,
+    required this.expense,
+    required this.income,
+    required this.saving,
+  });
+
+  final int expense;
+  final int income;
+  final int saving;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        children: [
+          _cell(
+            context,
+            AppI18n.t(context, en: 'Expense', ar: 'المصروف'),
+            formatOmr(expense),
+            const Color(0xFFE24B4A),
+          ),
+          Container(
+            width: 1,
+            height: 36,
+            color: Theme.of(context).dividerColor,
+          ),
+          _cell(
+            context,
+            AppI18n.t(context, en: 'Income', ar: 'الدخل'),
+            formatOmr(income),
+            const Color(0xFF2E9E5B),
+          ),
+          Container(
+            width: 1,
+            height: 36,
+            color: Theme.of(context).dividerColor,
+          ),
+          _cell(
+            context,
+            AppI18n.t(context, en: 'Saving', ar: 'الادخار'),
+            formatOmr(saving),
+            const Color(0xFFE0A100),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _cell(BuildContext context, String label, String amount, Color color) {
+    return Expanded(
+      child: Column(
+        children: [
+          Text(
+            label,
+            style: TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.w500),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            amount,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+              color: color,
+            ),
+          ),
         ],
       ),
     );
@@ -140,165 +226,175 @@ class BillsReminder extends StatelessWidget {
     required this.bills,
     required this.onViewAll,
     this.onAddBill,
+    this.onBillTap,
     this.now,
   });
 
   final List<BillItem> bills;
   final VoidCallback onViewAll;
   final VoidCallback? onAddBill;
+  final ValueChanged<BillItem>? onBillTap;
   final DateTime? now;
+
+  List<BillItem> get _upcoming {
+    final unpaid = [for (final b in bills) if (b.isUnpaid) b]
+      ..sort((a, b) => a.dueDate.compareTo(b.dueDate));
+    return unpaid.take(3).toList();
+  }
 
   @override
   Widget build(BuildContext context) {
+    final rows = _upcoming;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          AppI18n.t(context, en: 'Bills Reminder', ar: 'تذكير الفواتير'),
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w700,
-            color: Theme.of(context).colorScheme.onSurface,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Container(
-          width: 118,
-          height: 2,
-          color: AppColors.homePrimary.withValues(alpha: 0.18),
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                AppI18n.t(context, en: 'Bills Reminder', ar: 'تذكير الفواتير'),
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+              ),
+            ),
+            GestureDetector(
+              onTap: onViewAll,
+              child: Text(
+                AppI18n.t(context, en: 'View All >', ar: 'عرض الكل'),
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.homeAccent,
+                ),
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 12),
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-          decoration: BoxDecoration(
-            color: Theme.of(context).cardColor,
-            borderRadius: BorderRadius.circular(18),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
-                blurRadius: 14,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Column(
-            children: [
-              if (bills.isEmpty)
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      AppI18n.t(context, en: 'No bills yet', ar: 'لا توجد فواتير بعد'),
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                    ),
+        if (rows.isEmpty)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.fromLTRB(16, 18, 16, 16),
+            decoration: BoxDecoration(
+              color: Theme.of(context).cardColor,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Column(
+              children: [
+                Text(
+                  AppI18n.t(context, en: 'No bills yet', ar: 'لا توجد فواتير بعد'),
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
-                )
-              else
-                for (var i = 0; i < bills.length; i++) ...[
-                  if (i > 0) const SizedBox(height: 4),
-                  _BillRow(bill: bills[i], now: now),
-                ],
-              const SizedBox(height: 4),
-              Row(
-                children: [
-                  GestureDetector(
-                    onTap: onAddBill,
-                    child: Text(
-                      AppI18n.t(context, en: 'Add bill', ar: 'إضافة فاتورة'),
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.homeAccent,
-                      ),
-                    ),
+                ),
+                const SizedBox(height: 12),
+                TextButton(
+                  onPressed: onAddBill,
+                  child: Text(
+                    AppI18n.t(context, en: 'Add bill', ar: 'إضافة فاتورة'),
                   ),
-                  const Spacer(),
-                  GestureDetector(
-                    onTap: onViewAll,
-                    child: Text(
-                      AppI18n.t(context, en: 'View All >', ar: 'عرض الكل >'),
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.homeAccent,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
+                ),
+              ],
+            ),
+          )
+        else
+          for (final bill in rows) ...[
+            _BillReminderCard(
+              bill: bill,
+              now: now,
+              onTap: () => onBillTap?.call(bill),
+            ),
+            const SizedBox(height: 8),
+          ],
       ],
     );
   }
 }
 
-class _BillRow extends StatelessWidget {
-  const _BillRow({required this.bill, this.now});
+class _BillReminderCard extends StatelessWidget {
+  const _BillReminderCard({
+    required this.bill,
+    required this.onTap,
+    this.now,
+  });
 
   final BillItem bill;
+  final VoidCallback onTap;
   final DateTime? now;
-
-  IconData get _icon {
-    switch (bill.kind) {
-      case BillKind.electricity:
-        return Icons.bolt_rounded;
-      case BillKind.internet:
-        return Icons.wifi_rounded;
-      case BillKind.generic:
-        return Icons.receipt_long_rounded;
-    }
-  }
-
-  Color get _iconColor {
-    switch (bill.kind) {
-      case BillKind.electricity:
-        return const Color(0xFFF5A623);
-      case BillKind.internet:
-        return const Color(0xFF4A90E2);
-      case BillKind.generic:
-        return AppColors.homeAccent;
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        children: [
-          Icon(_icon, color: _iconColor, size: 26),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  bill.name,
+    final cat = expenseCategoryById(
+      normalizeExpenseCategoryId(bill.category ?? bill.name),
+    ) ??
+        kExpenseCategories.last;
+    final pill = billDuePill(bill.dueDate, now: now);
+    return Material(
+      color: Theme.of(context).cardColor,
+      borderRadius: BorderRadius.circular(20),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(20),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
+          child: Row(
+            children: [
+              CategoryIcon(cat.id, cat.color, 36),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      bill.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      formatOmr(bill.amountBaisa),
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    Text(
+                      DateFormat('d MMM yyyy').format(bill.dueDate),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: pill.color.withValues(alpha: 0.16),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  pill.label,
                   style: TextStyle(
-                    fontSize: 14,
+                    fontSize: 11,
                     fontWeight: FontWeight.w700,
-                    color: Theme.of(context).colorScheme.onSurface,
+                    color: pill.color,
                   ),
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  formatBillDue(bill.dueDate, now: now),
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -311,12 +407,14 @@ class OverviewCard extends StatelessWidget {
     required this.totalIncome,
     required this.totalSaving,
     required this.onViewAll,
+    this.expenseSlices = const [],
   });
 
   final int totalExpense;
   final int totalIncome;
   final int totalSaving;
   final VoidCallback onViewAll;
+  final List<ExpenseSlice> expenseSlices;
 
   @override
   Widget build(BuildContext context) {
@@ -347,6 +445,8 @@ class OverviewCard extends StatelessWidget {
             ),
           ],
         ),
+        const SizedBox(height: 12),
+        _HomeExpensePie(slices: expenseSlices),
         const SizedBox(height: 12),
         Container(
           width: double.infinity,
@@ -613,6 +713,60 @@ class _QuickActionCard extends StatelessWidget {
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _HomeExpensePie extends StatelessWidget {
+  const _HomeExpensePie({required this.slices});
+
+  final List<ExpenseSlice> slices;
+
+  static const _palette = [
+    AppColors.homeExpense,
+    AppColors.homeIncome,
+    AppColors.homeSaving,
+    AppColors.homeAccent,
+    Color(0xFF42A5F5),
+    Color(0xFF7E57C2),
+    Color(0xFFFF8A65),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    if (slices.isEmpty) {
+      return SizedBox(
+        height: 140,
+        child: Center(
+          child: Text(
+            AppMessages.noChartData,
+            style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
+          ),
+        ),
+      );
+    }
+    return SizedBox(
+      height: 180,
+      child: PieChart(
+        PieChartData(
+          sectionsSpace: 2,
+          centerSpaceRadius: 36,
+          sections: [
+            for (var i = 0; i < slices.length; i++)
+              PieChartSectionData(
+                value: slices[i].amountBaisa.toDouble(),
+                title: '${slices[i].percent}%',
+                color: _palette[i % _palette.length],
+                radius: 48,
+                titleStyle: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+          ],
         ),
       ),
     );

@@ -1,6 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
 
-/// Deployed custom auth handler (Spark Hosting). Used for reset + verify emails.
 const String kCustomAuthHandlerUrl = 'https://b-teck.web.app/auth/index.html';
 
 bool get hasCustomAuthHandlerUrl => kCustomAuthHandlerUrl.trim().isNotEmpty;

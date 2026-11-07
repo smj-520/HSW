@@ -590,7 +590,6 @@ class _PasswordSettingsPageState extends State<_PasswordSettingsPage> {
         setState(() => _passwordUpdatedAtIso = raw);
       }
     } catch (_) {
-      // Non-fatal: form still works without metadata display.
     }
   }
 

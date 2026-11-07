@@ -2,14 +2,12 @@ import 'package:firebase_database/firebase_database.dart';
 
 import '../models/transaction_model.dart';
 
-// All transaction database work lives here. Screens must not talk to Firebase themselves.
 class TransactionService {
   TransactionService({FirebaseDatabase? database})
       : _root = (database ?? FirebaseDatabase.instance).ref('finance');
 
   final DatabaseReference _root;
 
-  // Loads this user's transactions. Newest first. Empty list if none exist.
   Future<List<TransactionModel>> loadTransactionList(String uid) async {
     final snapshot = await _root.child(uid).child('transactions').get();
     final value = snapshot.value;
@@ -47,7 +45,6 @@ class TransactionService {
     return transactionList;
   }
 
-  // Saves one new transaction for this user. Does not create sample rows.
   Future<void> addTransaction({
     required String uid,
     required String type,
@@ -56,7 +53,13 @@ class TransactionService {
     DateTime? date,
     String? category,
   }) {
+    if (amountBaisa <= 0) {
+      return Future.error(ArgumentError('Enter an amount greater than 0'));
+    }
     final kind = type.trim().toLowerCase();
+    if (kind != 'income' && kind != 'expense' && kind != 'saving') {
+      return Future.error(ArgumentError('Invalid transaction type'));
+    }
     final when = (date ?? DateTime.now()).toUtc();
     final row = <String, Object>{
       'kind': kind,

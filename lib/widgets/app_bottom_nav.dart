@@ -41,8 +41,8 @@ class NavTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final tablet = MediaQuery.sizeOf(context).shortestSide >= 600;
-    final size = big ? (tablet ? 62.0 : 54.0) : (tablet ? 50.0 : 44.0);
-    final radius = big ? 20.0 : 15.0;
+    final size = big ? (tablet ? 56.0 : 50.0) : (tablet ? 44.0 : 38.0);
+    final radius = big ? 18.0 : 13.0;
     final labelColor = selected ? color : scheme.onSurfaceVariant;
     final surface = scheme.surface;
 
@@ -101,7 +101,7 @@ class NavTile extends StatelessWidget {
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
       child: Transform.translate(
-        offset: big ? const Offset(0, -18) : Offset.zero,
+        offset: big ? const Offset(0, -16) : Offset.zero,
         child: body,
       ),
     );

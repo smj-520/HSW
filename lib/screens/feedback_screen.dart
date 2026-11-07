@@ -6,7 +6,6 @@ import '../widgets/responsive_layout.dart';
 import '../models/admin_models.dart';
 import '../services/admin_services.dart';
 
-// Admin page: read-only list of user feedback, newest first.
 class FeedbackScreen extends StatefulWidget {
   const FeedbackScreen({super.key});
 
@@ -26,7 +25,6 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
     loadFeedback();
   }
 
-  // Downloads feedback from Firebase.
   Future<void> loadFeedback() async {
     setState(() {
       isLoading = true;
@@ -48,7 +46,6 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
     }
   }
 
-  // Opens the detail page. Admin cannot change the message.
   void openDetail(FeedbackModel feedback) {
     Navigator.of(context).push(
       MaterialPageRoute(
@@ -108,7 +105,6 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
   }
 }
 
-// Shows one feedback. Admin can only read. There is no edit or delete.
 class FeedbackDetailScreen extends StatelessWidget {
   const FeedbackDetailScreen({super.key, required this.feedback});
 

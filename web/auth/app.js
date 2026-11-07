@@ -1,15 +1,4 @@
-﻿/**
- * Custom Firebase email action handler page.
- *
- * Supports:
- *  - verifyEmail
- *  - resetPassword
- *  - recoverEmail
- *
- * Configure using ./config.json
- */
-
-const titleEl = document.getElementById('title');
+﻿const titleEl = document.getElementById('title');
 const subtitleEl = document.getElementById('subtitle');
 const messageEl = document.getElementById('message');
 const otpSection = document.getElementById('otpSection');
@@ -66,12 +55,10 @@ async function firebasePost(endpoint, payload) {
 }
 
 function setStaticNav() {
-  // Navigation CTAs intentionally removed from UI.
   void continueUrl;
   void configuredContinueUrl;
 }
 
-/** Same rules as Flutter `FormValidators.strongPassword` (register / reset in app). */
 const MIN_PASSWORD_LEN = 8;
 
 function validatePassword(pass) {
@@ -203,7 +190,6 @@ async function handleResetPassword() {
     saveBtn.disabled = true;
     saveBtn.innerHTML = '<span class="spinner"></span>Saving…';
     try {
-      // Validate code lazily here so form appears instantly.
       await firebasePost('accounts:resetPassword', { oobCode });
       await firebasePost('accounts:resetPassword', {
         oobCode,

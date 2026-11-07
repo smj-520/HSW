@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// Global theme + language. Settings writes here; [MaterialApp] listens.
 class AppSettingsController extends ChangeNotifier {
   AppSettingsController._();
   static final AppSettingsController instance = AppSettingsController._();
@@ -18,7 +17,6 @@ class AppSettingsController extends ChangeNotifier {
   bool get isDark => _themeMode == ThemeMode.dark;
   bool get isArabic => _locale.languageCode == 'ar';
 
-  /// Call once at startup so the last language/theme is ready before first frame.
   Future<void> load() async {
     final prefs = await SharedPreferences.getInstance();
     final lang = prefs.getString(_kLocale);
