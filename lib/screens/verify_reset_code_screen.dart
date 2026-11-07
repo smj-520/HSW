@@ -1,8 +1,6 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-
 import '../navigation/app_transitions.dart';
 import '../services/app_i18n.dart';
 import '../services/password_reset_service.dart';
@@ -13,7 +11,7 @@ import '../widgets/primary_action_button.dart';
 import '../widgets/responsive_layout.dart';
 import './login_screen.dart';
 
-// Screen 2: user types the 6-digit email code.
+
 class VerifyResetCodeScreen extends StatefulWidget {
   const VerifyResetCodeScreen({super.key, required this.email});
 
