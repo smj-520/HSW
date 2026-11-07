@@ -9,7 +9,6 @@ import '../models/budget_models.dart';
 import '../services/budget_service.dart';
 import '../widgets/budget_widgets.dart';
 
-// Add or Edit budget. If budget is null we are adding. If it is set we are editing.
 class AddBudgetScreen extends StatefulWidget {
   const AddBudgetScreen({super.key, this.budget});
 
@@ -49,7 +48,6 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
     super.dispose();
   }
 
-  // True when the amount box has a number bigger than 0.
   bool amountIsValid() {
     return parseOmrToBaisa(_amount.text) != null;
   }
@@ -59,7 +57,6 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
     return FirebaseAuth.instance.currentUser?.uid;
   }
 
-  // Opens the calendar. Date is optional.
   Future<void> pickDate() async {
     final picked = await showDatePicker(
       context: context,
@@ -123,7 +120,6 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
     }
   }
 
-  // No category = one overall limit. If it exists we update it.
   Future<void> _saveOverall({
     required String uid,
     required int amountBaisa,
@@ -162,7 +158,6 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
     );
   }
 
-  // Category budget. Blocks two budgets for the same category. Warns if sum is too big.
   Future<bool> _saveCategory({
     required String uid,
     required int amountBaisa,
