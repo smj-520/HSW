@@ -7,7 +7,7 @@ import '../services/admin_services.dart';
 import '../widgets/admin_widgets.dart';
 import './biller_form_screen.dart';
 
-// Admin page: list billers, then add, edit, or delete them..
+
 class BillerScreen extends StatefulWidget {
   const BillerScreen({super.key});
 
@@ -27,7 +27,7 @@ class _BillerScreenState extends State<BillerScreen> {
     loadBillers();
   }
 
-  // Downloads billers from Firebase.
+ 
   Future<void> loadBillers() async {
     setState(() {
       isLoading = true;
@@ -49,7 +49,7 @@ class _BillerScreenState extends State<BillerScreen> {
     }
   }
 
-  // Opens the add form, then reloads if something was saved.
+ 
   Future<void> openAdd() async {
     final saved = await Navigator.of(context).push<bool>(
       MaterialPageRoute(builder: (context) => const BillerFormScreen()),
@@ -57,7 +57,7 @@ class _BillerScreenState extends State<BillerScreen> {
     if (saved == true) await loadBillers();
   }
 
-  // Opens the edit form with the old data already filled in.
+ 
   Future<void> openEdit(BillerModel biller) async {
     final saved = await Navigator.of(context).push<bool>(
       MaterialPageRoute(builder: (context) => BillerFormScreen(biller: biller)),
@@ -65,7 +65,7 @@ class _BillerScreenState extends State<BillerScreen> {
     if (saved == true) await loadBillers();
   }
 
-  // Asks "Are you sure?" then deletes the biller.
+ 
   Future<void> deleteBiller(BillerModel biller) async {
     final ok = await ConfirmDialog.show(
       context,
