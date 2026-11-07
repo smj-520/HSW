@@ -1,7 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:phone_numbers_parser/phone_numbers_parser.dart';
-
 import '../navigation/app_transitions.dart';
 import '../services/app_i18n.dart';
 import '../services/app_settings_controller.dart';
@@ -21,6 +20,7 @@ import './about_application_page.dart';
 import './ai_chatbot_screen.dart';
 import './login_screen.dart';
 import './send_feedback_screen.dart';
+
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key, required this.isAdmin});

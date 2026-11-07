@@ -128,6 +128,7 @@ class _AddBudgetScreenState extends State<AddBudgetScreen> {
       return;
     }
 
+    
     setState(() => isLoading = true);
     try {
       final budgetList = await _budgetService.loadBudgetList(uid);

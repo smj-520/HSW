@@ -1,7 +1,5 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
-
 import '../navigation/app_transitions.dart';
 import '../services/app_i18n.dart';
 import '../widgets/primary_action_button.dart';

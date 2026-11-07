@@ -1,7 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-
 import '../services/app_i18n.dart';
 import '../theme/app_colors.dart';
 import '../utils/app_messages.dart';

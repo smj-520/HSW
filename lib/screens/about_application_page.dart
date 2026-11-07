@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
-
 import '../services/app_i18n.dart';
 import '../theme/app_colors.dart';
 import '../widgets/motion_widgets.dart';
