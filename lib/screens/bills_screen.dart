@@ -9,7 +9,7 @@ import '../widgets/bills_widgets.dart';
 import '../services/bill_service.dart';
 import './add_bill_screen.dart';
 
-// Bills page: Unpaid and Paid lists from this user's Firebase data.
+
 class BillsScreen extends StatefulWidget {
   const BillsScreen({super.key});
 
@@ -23,7 +23,7 @@ class _BillsScreenState extends State<BillsScreen> {
   List<BillModel> billList = [];
   bool isLoading = true;
   String errorMessage = '';
-  // true = Unpaid tab, false = Paid tab.
+
   bool showUnpaid = true;
   String searchText = '';
 
@@ -39,13 +39,12 @@ class _BillsScreenState extends State<BillsScreen> {
     super.dispose();
   }
 
-  // The signed-in user's id, or null if nobody is logged in.
   String? sessionUid() {
     if (Firebase.apps.isEmpty) return null;
     return FirebaseAuth.instance.currentUser?.uid;
   }
 
-  // Downloads this user's bills.
+
   Future<void> loadBills() async {
     final uid = sessionUid();
     if (uid == null) {
@@ -75,7 +74,7 @@ class _BillsScreenState extends State<BillsScreen> {
     }
   }
 
-  // Opens Add Bill, then reloads the list when we come back.
+ 
   Future<void> openAddBill() async {
     await Navigator.of(context).push(
       MaterialPageRoute(builder: (context) => const AddBillScreen()),
@@ -83,7 +82,7 @@ class _BillsScreenState extends State<BillsScreen> {
     await loadBills();
   }
 
-  // Asks first, then marks the bill paid and adds an expense.
+  
   Future<void> markBillAsPaid(BillModel bill) async {
     if (bill.isPaid) return;
     final ok = await showDialog<bool>(
@@ -206,7 +205,6 @@ class _BillsScreenState extends State<BillsScreen> {
     );
   }
 
-  // Unpaid tab body.
   Widget _unpaidList(List<BillModel> unpaidBills) {
     if (billList.isEmpty) {
       return Center(
@@ -243,7 +241,6 @@ class _BillsScreenState extends State<BillsScreen> {
     );
   }
 
-  // Paid tab body (payment history).
   Widget _paidList(List<BillModel> paidBills) {
     if (paidBills.isEmpty) {
       return Center(
@@ -269,7 +266,7 @@ class _BillsScreenState extends State<BillsScreen> {
   }
 }
 
-// Green / grey pills for Unpaid and Paid.
+
 class _UnpaidPaidToggle extends StatelessWidget {
   const _UnpaidPaidToggle({
     required this.showUnpaid,
