@@ -12,6 +12,7 @@ class AboutApplicationPage extends StatefulWidget {
 
   final bool isAdmin;
 
+  
   @override
   State<AboutApplicationPage> createState() => _AboutApplicationPageState();
 }
