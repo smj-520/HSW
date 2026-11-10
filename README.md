@@ -1,7 +1,6 @@
 ﻿# cpp
 A Flutter app for Hostel Student Wallet.
 
-
 ## Custom Branded Auth Web Pages
 
 A fully branded Firebase action handler is included in `web/auth/`.
