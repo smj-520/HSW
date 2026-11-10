@@ -49,6 +49,7 @@ const Map<String, String> kCategoryIconSvgs = {
   'gifts_family': _giftsFamily,
   'groceries': _groceries,
   'emergency': _emergency,
+
 };
 
 String categoryIconKey(String categoryId) {

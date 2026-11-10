@@ -135,7 +135,7 @@ class _TransactionScreenState extends State<TransactionScreen>
               child: Row(
                 children: [
                   _FilterTab(
-                    label: AppI18n.t(context, en: 'All', ar: 'الكل'),
+                    label: AppI18n.t(context, en: 'All Summary', ar: 'الكل'),
                     color: const Color(0xFF1F4D3D),
                     selected: tabController.index == 0,
                     onTap: () => tabController.animateTo(0),

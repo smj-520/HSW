@@ -2,7 +2,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-
 import '../core/budget_calculator.dart';
 import '../models/home_finance_data.dart';
 import '../services/app_i18n.dart';
