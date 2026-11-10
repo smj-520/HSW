@@ -1,7 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-
 import './admin_home_screen.dart';
 import '../services/admin_services.dart';
 import '../navigation/app_transitions.dart';
