@@ -1,5 +1,4 @@
 ﻿# cpp
-
 A Flutter app for Hostel Student Wallet.
 
 ## Custom Branded Auth Web Pages
